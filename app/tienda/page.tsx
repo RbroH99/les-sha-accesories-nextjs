@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Star, Heart, ShoppingBag, Search, Filter, X } from "lucide-react"
+import { Star, Heart, ShoppingBag, Search, Filter, X, Package, CheckCircle, Clock, ImageIcon } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import { useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
@@ -32,6 +32,8 @@ const allProducts = [
     isNew: true,
     description: "Elegante collar con dije de luna en baño de oro",
     discountId: "discount_1",
+    availabilityType: "stock_only",
+    hasImages: true,
   },
   {
     id: 2,
@@ -43,6 +45,8 @@ const allProducts = [
     rating: 5,
     isNew: false,
     description: "Delicados aretes con cristales rosados",
+    availabilityType: "stock_and_order",
+    hasImages: true,
   },
   {
     id: 3,
@@ -54,6 +58,8 @@ const allProducts = [
     rating: 4,
     isNew: true,
     description: "Pulsera artesanal con perlas naturales",
+    availabilityType: "stock_only",
+    hasImages: true,
   },
   {
     id: 4,
@@ -65,6 +71,8 @@ const allProducts = [
     rating: 5,
     isNew: false,
     description: "Anillo vintage con diseño floral",
+    availabilityType: "stock_and_order",
+    hasImages: true,
   },
   {
     id: 5,
@@ -77,6 +85,8 @@ const allProducts = [
     isNew: true,
     description: "Collar con símbolo de infinito en plata",
     discountId: "discount_2",
+    availabilityType: "stock_and_order",
+    hasImages: true,
   },
   {
     id: 6,
@@ -88,6 +98,8 @@ const allProducts = [
     rating: 5,
     isNew: false,
     description: "Aretes en forma de gota con piedras verdes",
+    availabilityType: "stock_only",
+    hasImages: true,
   },
   {
     id: 7,
@@ -99,6 +111,8 @@ const allProducts = [
     rating: 4,
     isNew: false,
     description: "Pulsera de cuero trenzado con detalles metálicos",
+    availabilityType: "stock_and_order",
+    hasImages: true,
   },
   {
     id: 8,
@@ -110,6 +124,34 @@ const allProducts = [
     rating: 5,
     isNew: true,
     description: "Broche decorativo con forma de mariposa",
+    availabilityType: "stock_only",
+    hasImages: true,
+  },
+  {
+    id: 9,
+    name: "Anillo Personalizado",
+    price: 85.0,
+    image: null, // Sin imagen
+    categoryId: "cat_4",
+    tagIds: ["tag_2"],
+    rating: 5,
+    isNew: true,
+    description: "Anillo único hecho completamente a medida",
+    availabilityType: "order_only",
+    hasImages: false,
+  },
+  {
+    id: 10,
+    name: "Collar Nombre Personalizado",
+    price: 65.0,
+    image: null, // Sin imagen
+    categoryId: "cat_1",
+    tagIds: ["tag_4"],
+    rating: 5,
+    isNew: true,
+    description: "Collar con nombre personalizado en oro",
+    availabilityType: "order_only",
+    hasImages: false,
   },
 ]
 
@@ -123,10 +165,13 @@ const sortOptions = [
 
 export default function TiendaPage() {
   const [products, setProducts] = useState(allProducts)
+  const [filteredProducts, setFilteredProducts] = useState(allProducts)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState({ min: "", max: "" })
   const [showDiscounted, setShowDiscounted] = useState(false)
+  const [showWithImages, setShowWithImages] = useState(false) // Nuevo filtro
+  const [selectedAvailability, setSelectedAvailability] = useState("") // Nuevo filtro
   const [sortBy, setSortBy] = useState("featured")
   const [showFilters, setShowFilters] = useState(false)
 
@@ -185,6 +230,16 @@ export default function TiendaPage() {
       })
     }
 
+    // Filter by products with images
+    if (showWithImages) {
+      filteredProducts = filteredProducts.filter((product) => product.hasImages)
+    }
+
+    // Filter by availability type
+    if (selectedAvailability) {
+      filteredProducts = filteredProducts.filter((product) => product.availabilityType === selectedAvailability)
+    }
+
     // Sort products
     switch (sortBy) {
       case "price-low":
@@ -213,14 +268,23 @@ export default function TiendaPage() {
     }
 
     setProducts(filteredProducts)
-  }, [searchTerm, selectedCategories, priceRange, showDiscounted, sortBy, calculateDiscountedPrice])
+  }, [
+    searchTerm,
+    selectedCategories,
+    priceRange,
+    showDiscounted,
+    showWithImages,
+    selectedAvailability,
+    sortBy,
+    calculateDiscountedPrice,
+  ])
 
   const handleAddToCart = (product: (typeof allProducts)[0]) => {
     addItem({
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
+      image: product.image || "/placeholder.svg?height=300&width=300",
       category: product.categoryId,
     })
     toast({
@@ -240,13 +304,43 @@ export default function TiendaPage() {
     setSelectedCategories([])
     setPriceRange({ min: "", max: "" })
     setShowDiscounted(false)
+    setShowWithImages(false)
+    setSelectedAvailability("")
   }
 
   const activeFiltersCount =
     (searchTerm ? 1 : 0) +
     selectedCategories.length +
     (priceRange.min || priceRange.max ? 1 : 0) +
-    (showDiscounted ? 1 : 0)
+    (showDiscounted ? 1 : 0) +
+    (showWithImages ? 1 : 0) +
+    (selectedAvailability ? 1 : 0)
+
+  const getAvailabilityIcon = (type: string) => {
+    switch (type) {
+      case "stock_only":
+        return <Package className="w-4 h-4 text-blue-600" />
+      case "stock_and_order":
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      case "order_only":
+        return <Clock className="w-4 h-4 text-orange-600" />
+      default:
+        return null
+    }
+  }
+
+  const getAvailabilityText = (type: string) => {
+    switch (type) {
+      case "stock_only":
+        return "Solo Stock"
+      case "stock_and_order":
+        return "Stock + Pedido"
+      case "order_only":
+        return "Solo Pedido"
+      default:
+        return ""
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -311,6 +405,37 @@ export default function TiendaPage() {
                     </div>
                   </div>
 
+                  {/* Availability Type */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Disponibilidad</Label>
+                    <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos los tipos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los tipos</SelectItem>
+                        <SelectItem value="stock_only">
+                          <div className="flex items-center space-x-2">
+                            <Package className="w-4 h-4 text-blue-600" />
+                            <span>Solo Stock</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="stock_and_order">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <span>Stock + Pedido</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="order_only">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-4 h-4 text-orange-600" />
+                            <span>Solo Pedido</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Price Range */}
                   <div>
                     <Label className="text-sm font-medium mb-3 block">Rango de Precios</Label>
@@ -330,12 +455,20 @@ export default function TiendaPage() {
                     </div>
                   </div>
 
-                  {/* Discounted Products */}
-                  <div>
+                  {/* Special Filters */}
+                  <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Checkbox id="discounted" checked={showDiscounted} onCheckedChange={setShowDiscounted} />
                       <Label htmlFor="discounted" className="text-sm">
                         Solo productos con descuento
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="withImages" checked={showWithImages} onCheckedChange={setShowWithImages} />
+                      <Label htmlFor="withImages" className="text-sm flex items-center">
+                        <ImageIcon className="w-4 h-4 mr-1" />
+                        Solo productos con foto
                       </Label>
                     </div>
                   </div>
@@ -401,6 +534,37 @@ export default function TiendaPage() {
                       </div>
                     </div>
 
+                    {/* Availability Type */}
+                    <div>
+                      <Label className="text-sm font-medium mb-3 block">Disponibilidad</Label>
+                      <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos los tipos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos los tipos</SelectItem>
+                          <SelectItem value="stock_only">
+                            <div className="flex items-center space-x-2">
+                              <Package className="w-4 h-4 text-blue-600" />
+                              <span>Solo Stock</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="stock_and_order">
+                            <div className="flex items-center space-x-2">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <span>Stock + Pedido</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="order_only">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4 text-orange-600" />
+                              <span>Solo Pedido</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* Price Range */}
                     <div>
                       <Label className="text-sm font-medium mb-3 block">Rango de Precios</Label>
@@ -420,12 +584,20 @@ export default function TiendaPage() {
                       </div>
                     </div>
 
-                    {/* Discounted Products */}
-                    <div>
+                    {/* Special Filters */}
+                    <div className="space-y-3">
                       <div className="flex items-center space-x-2">
                         <Checkbox id="mobile-discounted" checked={showDiscounted} onCheckedChange={setShowDiscounted} />
                         <Label htmlFor="mobile-discounted" className="text-sm">
                           Solo productos con descuento
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="mobile-withImages" checked={showWithImages} onCheckedChange={setShowWithImages} />
+                        <Label htmlFor="mobile-withImages" className="text-sm flex items-center">
+                          <ImageIcon className="w-4 h-4 mr-1" />
+                          Solo productos con foto
                         </Label>
                       </div>
                     </div>
@@ -483,6 +655,15 @@ export default function TiendaPage() {
                             {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value}`} OFF
                           </Badge>
                         )}
+                        {/* Availability Badge */}
+                        <div className="absolute bottom-3 left-3 z-10">
+                          <Badge variant="outline" className="bg-white/90 backdrop-blur-sm">
+                            <div className="flex items-center space-x-1">
+                              {getAvailabilityIcon(product.availabilityType)}
+                              <span className="text-xs">{getAvailabilityText(product.availabilityType)}</span>
+                            </div>
+                          </Badge>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -501,7 +682,7 @@ export default function TiendaPage() {
                               id: product.id,
                               name: product.name,
                               price: product.price,
-                              image: product.image,
+                              image: product.image || "/placeholder.svg?height=300&width=300",
                               category: product.categoryId,
                             })
                             toast({
@@ -512,13 +693,23 @@ export default function TiendaPage() {
                         >
                           <Heart className={`w-4 h-4 ${isFavorite(product.id) ? "fill-rose-600 text-rose-600" : ""}`} />
                         </Button>
-                        <Image
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          width={300}
-                          height={300}
-                          className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                        {product.image ? (
+                          <Image
+                            src={product.image || "/placeholder.svg"}
+                            alt={product.name}
+                            width={300}
+                            height={300}
+                            className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-64 bg-gray-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                            <div className="text-center">
+                              <Package className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                              <p className="text-xs text-gray-500">Sin imagen</p>
+                              <p className="text-xs text-gray-400">Producto personalizado</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -568,7 +759,7 @@ export default function TiendaPage() {
                             }}
                           >
                             <ShoppingBag className="w-3 h-3 mr-1" />
-                            Agregar
+                            {product.availabilityType === "order_only" ? "Pedir" : "Agregar"}
                           </Button>
                         </div>
                       </div>

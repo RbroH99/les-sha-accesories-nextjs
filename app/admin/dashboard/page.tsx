@@ -1,18 +1,42 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Package,
+  Users,
+  ShoppingCart,
+  DollarSign,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Save,
+  Filter,
+  Search,
+  AlertTriangle,
+  XCircle,
+  CheckCircle,
+  Clock,
+  Percent,
+  Tag,
+  Folder,
+  Hash,
+  Menu,
+} from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { ImageUpload } from "@/components/image-upload"
 import {
   Dialog,
   DialogContent,
@@ -22,190 +46,198 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useAuth } from "@/contexts/auth-context"
-import { useToast } from "@/hooks/use-toast"
-import { useOrders } from "@/contexts/orders-context"
-import { useSettings } from "@/contexts/settings-context"
-import { useCategories } from "@/contexts/categories-context"
-import { useDiscounts } from "@/contexts/discounts-context"
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Package,
-  ShoppingBag,
-  Users,
-  TrendingUp,
-  LogOut,
-  X,
-  Eye,
-  Settings,
-  Truck,
-  AlertTriangle,
-  Tag,
-  Percent,
-  Calendar,
-  Search,
-  Filter,
-} from "lucide-react"
-import Image from "next/image"
+import { CardDescription } from "@/components/ui/card"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
-interface Product {
-  id: number
-  name: string
-  price: number
-  images: string[]
-  categoryId: string
-  tagIds: string[]
-  description: string
-  story?: string
-  materials?: string[]
-  dimensions?: string
-  care?: string
-  warranty?: {
-    hasWarranty: boolean
-    duration?: number
-    unit?: "days" | "months" | "years"
-  }
-  discountId?: string
-  stock: number
-  isNew: boolean
+// Mock data for demonstration
+const mockStats = {
+  totalProducts: 24,
+  totalOrders: 156,
+  totalCustomers: 89,
+  totalRevenue: 12450.0,
 }
 
-const initialProducts: Product[] = [
+const mockOrders = [
+  {
+    id: "ORD-001",
+    customer: "María González",
+    email: "maria@email.com",
+    total: 85.0,
+    status: "pendiente",
+    date: "2024-01-15",
+    items: 3,
+  },
+  {
+    id: "ORD-002",
+    customer: "Carlos Ruiz",
+    email: "carlos@email.com",
+    total: 125.5,
+    status: "enviado",
+    date: "2024-01-14",
+    items: 2,
+  },
+  {
+    id: "ORD-003",
+    customer: "Ana López",
+    email: "ana@email.com",
+    total: 67.25,
+    status: "entregado",
+    date: "2024-01-13",
+    items: 1,
+  },
+]
+
+const mockProducts = [
   {
     id: 1,
     name: "Collar Luna Dorada",
     price: 45.0,
-    images: [
-      "/placeholder.svg?height=300&width=300",
-      "/placeholder.svg?height=300&width=300",
-      "/placeholder.svg?height=300&width=300",
-    ],
-    categoryId: "cat_1",
-    tagIds: ["tag_1", "tag_4"],
-    description: "Elegante collar con dije de luna en baño de oro",
-    story: "Inspirado en las noches de luna llena, este collar nació de una caminata nocturna por la playa...",
-    materials: ["Baño de oro 18k", "Aleación hipoalergénica", "Cadena de acero inoxidable"],
-    dimensions: "Dije: 2.5cm x 2cm, Cadena: 45cm (ajustable)",
-    care: "Evitar contacto con perfumes y agua. Limpiar con paño suave.",
-    warranty: {
-      hasWarranty: true,
-      duration: 6,
-      unit: "months",
-    },
     stock: 15,
-    isNew: true,
+    category: "Collares",
+    status: "active",
+    image: "/placeholder.svg?height=100&width=100",
+    availabilityType: "stock_only",
+    estimatedDeliveryDays: 3,
+    hasWarranty: true,
+    warrantyDuration: 6,
+    warrantyUnit: "months",
+    discountId: null,
+    hasReturns: false,
+    returnDays: 30,
   },
   {
     id: 2,
     name: "Aretes Cristal Rosa",
     price: 28.0,
-    images: ["/placeholder.svg?height=300&width=300", "/placeholder.svg?height=300&width=300"],
-    categoryId: "cat_2",
-    tagIds: ["tag_1"],
-    description: "Delicados aretes con cristales rosados",
-    warranty: {
-      hasWarranty: false,
-    },
     stock: 8,
-    isNew: false,
+    category: "Aretes",
+    status: "active",
+    image: "/placeholder.svg?height=100&width=100",
+    availabilityType: "stock_and_order",
+    estimatedDeliveryDays: 7,
+    hasWarranty: false,
+    discountId: "desc_1",
+    hasReturns: true,
+    returnDays: 15,
   },
   {
     id: 3,
-    name: "Pulsera Perlas Naturales",
+    name: "Pulsera Perlas",
     price: 35.0,
-    images: ["/placeholder.svg?height=300&width=300"],
-    categoryId: "cat_3",
-    tagIds: ["tag_3"],
-    description: "Pulsera artesanal con perlas naturales",
-    warranty: {
-      hasWarranty: true,
-      duration: 1,
-      unit: "years",
-    },
-    stock: 12,
-    isNew: true,
+    stock: 0,
+    category: "Pulseras",
+    status: "inactive",
+    image: "/placeholder.svg?height=100&width=100",
+    availabilityType: "order_only",
+    estimatedDeliveryDays: 14,
+    hasWarranty: true,
+    warrantyDuration: 1,
+    warrantyUnit: "years",
+    discountId: null,
+    hasReturns: false,
+    returnDays: null,
   },
 ]
 
+const mockDiscounts = [
+  {
+    id: "desc_1",
+    name: "Descuento Primavera",
+    description: "Descuento especial de temporada",
+    type: "percentage",
+    value: 15,
+    reason: "Promoción de temporada",
+    startDate: "2024-01-01",
+    endDate: "2024-03-31",
+    isActive: true,
+    isGeneric: false,
+    productIds: [2],
+    createdAt: "2024-01-01",
+  },
+  {
+    id: "desc_2",
+    name: "Descuento VIP",
+    description: "Descuento para clientes VIP",
+    type: "fixed",
+    value: 10,
+    reason: "Cliente VIP",
+    isActive: true,
+    isGeneric: true,
+    productIds: [],
+    createdAt: "2024-01-01",
+  },
+]
+
+const mockCategories = [
+  {
+    id: "cat_1",
+    name: "Collares",
+    description: "Collares artesanales únicos y elegantes",
+    isActive: true,
+    createdAt: "2024-01-01",
+  },
+  {
+    id: "cat_2",
+    name: "Aretes",
+    description: "Aretes delicados y llamativos para toda ocasión",
+    isActive: true,
+    createdAt: "2024-01-01",
+  },
+  {
+    id: "cat_3",
+    name: "Pulseras",
+    description: "Pulseras cómodas y hermosas hechas a mano",
+    isActive: true,
+    createdAt: "2024-01-01",
+  },
+  {
+    id: "cat_4",
+    name: "Anillos",
+    description: "Anillos únicos y especiales",
+    isActive: true,
+    createdAt: "2024-01-01",
+  },
+]
+
+const mockTags = [
+  { id: "tag_1", name: "elegante", color: "#8B5CF6", isActive: true, createdAt: "2024-01-01" },
+  { id: "tag_2", name: "casual", color: "#10B981", isActive: true, createdAt: "2024-01-01" },
+  { id: "tag_3", name: "vintage", color: "#F59E0B", isActive: true, createdAt: "2024-01-01" },
+  { id: "tag_4", name: "moderno", color: "#EF4444", isActive: true, createdAt: "2024-01-01" },
+]
+
 export default function AdminDashboard() {
-  const { user, logout } = useAuth()
-  const router = useRouter()
   const { toast } = useToast()
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(initialProducts)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
-  const [viewingOrder, setViewingOrder] = useState<any>(null)
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
-  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
-  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<any>(null)
-  const [editingTag, setEditingTag] = useState<any>(null)
-  const [editingDiscount, setEditingDiscount] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState("overview")
+  const [orders, setOrders] = useState(mockOrders)
+  const [products, setProducts] = useState(mockProducts)
+  const [discounts, setDiscounts] = useState(mockDiscounts)
+  const [categories, setCategories] = useState(mockCategories)
+  const [tags, setTags] = useState(mockTags)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Filtros para productos
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("")
-  const [selectedTagFilter, setSelectedTagFilter] = useState("")
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" })
-  const [stockRange, setStockRange] = useState({ min: "", max: "" })
-
-  // Paginación
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-
-  // Opciones para elementos por página
-  const itemsPerPageOptions = [5, 10, 20, 50]
-
-  // Calcular productos paginados
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
-
-  // Resetear página cuando cambien los filtros o elementos por página
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filteredProducts.length, itemsPerPage])
-
-  const [formData, setFormData] = useState({
+  const [newProduct, setNewProduct] = useState({
     name: "",
-    price: "",
-    categoryId: "",
-    tagIds: [] as string[],
     description: "",
-    story: "",
-    materials: "",
-    dimensions: "",
-    care: "",
+    price: "",
+    category: "",
+    stock: "",
+    images: [] as string[],
+    availabilityType: "stock_only",
+    estimatedDeliveryDays: "7",
     hasWarranty: false,
     warrantyDuration: "",
-    warrantyUnit: "months" as "days" | "months" | "years",
+    warrantyUnit: "months",
     discountId: "",
-    stock: "",
-    images: [""],
-    isNew: false,
+    hasReturns: false,
+    returnDays: "",
   })
 
-  const [categoryFormData, setCategoryFormData] = useState({
+  // Discount form state
+  const [newDiscount, setNewDiscount] = useState({
     name: "",
     description: "",
-    isActive: true,
-  })
-
-  const [tagFormData, setTagFormData] = useState({
-    name: "",
-    color: "#8B5CF6",
-    isActive: true,
-  })
-
-  const [discountFormData, setDiscountFormData] = useState({
-    name: "",
-    description: "",
-    type: "percentage" as "percentage" | "fixed",
+    type: "percentage",
     value: "",
     reason: "",
     startDate: "",
@@ -215,39 +247,67 @@ export default function AdminDashboard() {
     productIds: [] as number[],
   })
 
-  const { orders, updateOrderStatus } = useOrders()
-  const { settings, updateSettings } = useSettings()
-  const { categories, tags, createCategory, updateCategory, deleteCategory, createTag, updateTag, deleteTag } =
-    useCategories()
-  const { discounts, createDiscount, updateDiscount, deleteDiscount, calculateDiscountedPrice } = useDiscounts()
-  const [activeTab, setActiveTab] = useState("products")
+  // Category form state
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    description: "",
+    isActive: true,
+  })
 
-  useEffect(() => {
-    if (!user || user.role !== "admin") {
-      router.push("/login")
-    }
-  }, [user, router])
+  // Tag form state
+  const [newTag, setNewTag] = useState({
+    name: "",
+    color: "#8B5CF6",
+    isActive: true,
+  })
 
-  // Filtrar productos
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("")
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("")
+  const [selectedAvailabilityFilter, setSelectedAvailabilityFilter] = useState("")
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" })
+  const [stockRange, setStockRange] = useState({ min: "", max: "" })
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false)
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
+  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState(null)
+  const [editingDiscount, setEditingDiscount] = useState(null)
+  const [editingCategory, setEditingCategory] = useState(null)
+  const [editingTag, setEditingTag] = useState(null)
+  const [viewingProduct, setViewingProduct] = useState(null)
+  const [filteredProducts, setFilteredProducts] = useState(mockProducts)
+
+  const itemsPerPageOptions = [5, 10, 20, 50]
+
+  // Filter products
   useEffect(() => {
     let filtered = products
 
-    // Filtro por búsqueda
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()))
     }
 
-    // Filtro por categoría
+    // Category filter
     if (selectedCategoryFilter) {
-      filtered = filtered.filter((product) => product.categoryId === selectedCategoryFilter)
+      filtered = filtered.filter((product) => product.category === selectedCategoryFilter)
     }
 
-    // Filtro por tag
-    if (selectedTagFilter) {
-      filtered = filtered.filter((product) => product.tagIds?.includes(selectedTagFilter))
+    // Status filter
+    if (selectedStatusFilter) {
+      filtered = filtered.filter((product) => product.status === selectedStatusFilter)
     }
 
-    // Filtro por rango de precios
+    // Availability filter
+    if (selectedAvailabilityFilter) {
+      filtered = filtered.filter((product) => product.availabilityType === selectedAvailabilityFilter)
+    }
+
+    // Price range filter
     if (priceRange.min) {
       filtered = filtered.filter((product) => product.price >= Number.parseFloat(priceRange.min))
     }
@@ -255,7 +315,7 @@ export default function AdminDashboard() {
       filtered = filtered.filter((product) => product.price <= Number.parseFloat(priceRange.max))
     }
 
-    // Filtro por rango de stock
+    // Stock range filter
     if (stockRange.min) {
       filtered = filtered.filter((product) => product.stock >= Number.parseInt(stockRange.min))
     }
@@ -264,239 +324,223 @@ export default function AdminDashboard() {
     }
 
     setFilteredProducts(filtered)
-  }, [products, searchTerm, selectedCategoryFilter, selectedTagFilter, priceRange, stockRange])
+  }, [
+    products,
+    searchTerm,
+    selectedCategoryFilter,
+    selectedStatusFilter,
+    selectedAvailabilityFilter,
+    priceRange,
+    stockRange,
+  ])
 
-  // Calcular productos paginados
+  // Calculate paginated products
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
 
-  // Resetear página cuando cambien los filtros
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filteredProducts.length, itemsPerPage])
 
-  const handleInputChange = (field: string, value: string | boolean | string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const getAvailabilityIcon = (type: string) => {
+    switch (type) {
+      case "stock_only":
+        return <Package className="w-4 h-4 text-blue-600" />
+      case "stock_and_order":
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      case "order_only":
+        return <Clock className="w-4 h-4 text-orange-600" />
+      default:
+        return <XCircle className="w-4 h-4 text-gray-600" />
+    }
   }
 
-  const handleImageChange = (index: number, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.map((img, i) => (i === index ? value : img)),
-    }))
+  const getAvailabilityText = (type: string) => {
+    switch (type) {
+      case "stock_only":
+        return "Solo Stock"
+      case "stock_and_order":
+        return "Stock + Pedido"
+      case "order_only":
+        return "Solo Pedido"
+      default:
+        return "Desconocido"
+    }
   }
 
-  const addImageField = () => {
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ""],
-    }))
-  }
-
-  const removeImageField = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }))
-  }
-
-  const handleTagToggle = (tagId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tagIds: prev.tagIds.includes(tagId) ? prev.tagIds.filter((id) => id !== tagId) : [...prev.tagIds, tagId],
-    }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmitProduct = (e) => {
     e.preventDefault()
-
-    const productData = {
-      name: formData.name,
-      price: Number.parseFloat(formData.price),
-      categoryId: formData.categoryId,
-      tagIds: formData.tagIds,
-      description: formData.description,
-      story: formData.story || undefined,
-      materials: formData.materials ? formData.materials.split(",").map((m) => m.trim()) : undefined,
-      dimensions: formData.dimensions || undefined,
-      care: formData.care || undefined,
-      warranty: {
-        hasWarranty: formData.hasWarranty,
-        duration: formData.hasWarranty ? Number.parseInt(formData.warrantyDuration) : undefined,
-        unit: formData.hasWarranty ? formData.warrantyUnit : undefined,
-      },
-      discountId: formData.discountId || undefined,
-      stock: Number.parseInt(formData.stock),
-      images: formData.images.filter((img) => img.trim() !== ""),
-      isNew: formData.isNew,
-    }
-
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) => (p.id === editingProduct.id ? { ...productData, id: editingProduct.id } : p)),
-      )
-      toast({
-        title: "Producto actualizado",
-        description: "El producto se actualizó correctamente",
-      })
-    } else {
-      const newProduct = {
-        ...productData,
-        id: Math.max(...products.map((p) => p.id)) + 1,
-      }
-      setProducts((prev) => [...prev, newProduct])
-      toast({
-        title: "Producto creado",
-        description: "El nuevo producto se agregó correctamente",
-      })
-    }
-
-    resetForm()
+    handleAddProduct()
+    setIsProductDialogOpen(false)
   }
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      price: "",
-      categoryId: "",
-      tagIds: [],
-      description: "",
-      story: "",
-      materials: "",
-      dimensions: "",
-      care: "",
-      hasWarranty: false,
-      warrantyDuration: "",
-      warrantyUnit: "months",
-      discountId: "",
-      stock: "",
-      images: [""],
-      isNew: false,
-    })
-    setEditingProduct(null)
-    setIsDialogOpen(false)
+  const handleSubmitDiscount = (e) => {
+    e.preventDefault()
+    handleAddDiscount()
+    setIsDiscountDialogOpen(false)
   }
 
-  const handleEdit = (product: Product) => {
+  const handleSubmitCategory = (e) => {
+    e.preventDefault()
+    handleAddCategory()
+    setIsCategoryDialogOpen(false)
+  }
+
+  const handleSubmitTag = (e) => {
+    e.preventDefault()
+    handleAddTag()
+    setIsTagDialogOpen(false)
+  }
+
+  const handleEditProduct = (product) => {
     setEditingProduct(product)
-    setFormData({
+    setNewProduct({
       name: product.name,
+      description: "",
       price: product.price.toString(),
-      categoryId: product.categoryId,
-      tagIds: product.tagIds || [],
-      description: product.description,
-      story: product.story || "",
-      materials: product.materials?.join(", ") || "",
-      dimensions: product.dimensions || "",
-      care: product.care || "",
-      hasWarranty: product.warranty?.hasWarranty || false,
-      warrantyDuration: product.warranty?.duration?.toString() || "",
-      warrantyUnit: product.warranty?.unit || "months",
-      discountId: product.discountId || "",
+      category: product.category,
       stock: product.stock.toString(),
-      images: product.images.length > 0 ? product.images : [""],
-      isNew: product.isNew,
+      images: [product.image],
+      availabilityType: product.availabilityType,
+      estimatedDeliveryDays: product.estimatedDeliveryDays?.toString() || "7",
+      hasWarranty: product.hasWarranty || false,
+      warrantyDuration: product.warrantyDuration?.toString() || "",
+      warrantyUnit: product.warrantyUnit || "months",
+      discountId: product.discountId || "",
+      hasReturns: product.hasReturns || false,
+      returnDays: product.returnDays?.toString() || "",
     })
-    setIsDialogOpen(true)
+    setIsProductDialogOpen(true)
   }
 
-  const handleDelete = (id: number) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id))
+  const handleEditDiscount = (discount) => {
+    setEditingDiscount(discount)
+    setNewDiscount({
+      name: discount.name,
+      description: discount.description || "",
+      type: discount.type,
+      value: discount.value.toString(),
+      reason: discount.reason,
+      startDate: discount.startDate || "",
+      endDate: discount.endDate || "",
+      isActive: discount.isActive,
+      isGeneric: discount.isGeneric,
+      productIds: discount.productIds || [],
+    })
+    setIsDiscountDialogOpen(true)
+  }
+
+  const handleEditCategory = (category) => {
+    setEditingCategory(category)
+    setNewCategory({
+      name: category.name,
+      description: category.description || "",
+      isActive: category.isActive,
+    })
+    setIsCategoryDialogOpen(true)
+  }
+
+  const handleEditTag = (tag) => {
+    setEditingTag(tag)
+    setNewTag({
+      name: tag.name,
+      color: tag.color,
+      isActive: tag.isActive,
+    })
+    setIsTagDialogOpen(true)
+  }
+
+  const handleDeleteProduct = (id) => {
+    setProducts(products.filter((p) => p.id !== id))
     toast({
       title: "Producto eliminado",
       description: "El producto se eliminó correctamente",
     })
   }
 
-  const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
-    const success = await updateOrderStatus(orderId, newStatus as any)
-    if (success) {
-      toast({
-        title: "Estado actualizado",
-        description: "El estado del pedido se actualizó correctamente",
-      })
-    } else {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el estado del pedido",
-        variant: "destructive",
-      })
-    }
+  const handleDeleteDiscount = (id) => {
+    setDiscounts(discounts.filter((d) => d.id !== id))
+    toast({
+      title: "Descuento eliminado",
+      description: "El descuento se eliminó correctamente",
+    })
   }
 
-  const handleCategorySubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      if (editingCategory) {
-        await updateCategory(editingCategory.id, categoryFormData)
-        toast({ title: "Categoría actualizada", description: "La categoría se actualizó correctamente" })
-      } else {
-        await createCategory(categoryFormData)
-        toast({ title: "Categoría creada", description: "La nueva categoría se creó correctamente" })
-      }
-      setCategoryFormData({ name: "", description: "", isActive: true })
-      setEditingCategory(null)
-      setIsCategoryDialogOpen(false)
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudo guardar la categoría", variant: "destructive" })
-    }
+  const handleDeleteCategory = (id) => {
+    setCategories(categories.filter((c) => c.id !== id))
+    toast({
+      title: "Categoría eliminada",
+      description: "La categoría se eliminó correctamente",
+    })
   }
 
-  const handleTagSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      if (editingTag) {
-        await updateTag(editingTag.id, tagFormData)
-        toast({ title: "Tag actualizado", description: "El tag se actualizó correctamente" })
-      } else {
-        await createTag(tagFormData)
-        toast({ title: "Tag creado", description: "El nuevo tag se creó correctamente" })
-      }
-      setTagFormData({ name: "", color: "#8B5CF6", isActive: true })
-      setEditingTag(null)
-      setIsTagDialogOpen(false)
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudo guardar el tag", variant: "destructive" })
-    }
+  const handleDeleteTag = (id) => {
+    setTags(tags.filter((t) => t.id !== id))
+    toast({
+      title: "Tag eliminado",
+      description: "El tag se eliminó correctamente",
+    })
   }
 
-  const handleDiscountSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const discountData = {
-        ...discountFormData,
-        value: Number.parseFloat(discountFormData.value),
-        startDate: discountFormData.isGeneric ? undefined : discountFormData.startDate,
-        endDate: discountFormData.isGeneric ? undefined : discountFormData.endDate,
-      }
-
-      if (editingDiscount) {
-        await updateDiscount(editingDiscount.id, discountData)
-        toast({ title: "Descuento actualizado", description: "El descuento se actualizó correctamente" })
-      } else {
-        await createDiscount(discountData)
-        toast({ title: "Descuento creado", description: "El nuevo descuento se creó correctamente" })
-      }
-      setDiscountFormData({
-        name: "",
-        description: "",
-        type: "percentage",
-        value: "",
-        reason: "",
-        startDate: "",
-        endDate: "",
-        isActive: true,
-        isGeneric: false,
-        productIds: [],
-      })
-      setEditingDiscount(null)
-      setIsDiscountDialogOpen(false)
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudo guardar el descuento", variant: "destructive" })
-    }
+  const resetProductForm = () => {
+    setNewProduct({
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      stock: "",
+      images: [],
+      availabilityType: "stock_only",
+      estimatedDeliveryDays: "7",
+      hasWarranty: false,
+      warrantyDuration: "",
+      warrantyUnit: "months",
+      discountId: "",
+      hasReturns: false,
+      returnDays: "",
+    })
+    setEditingProduct(null)
+    setIsProductDialogOpen(false)
   }
 
-  const clearFilters = () => {
-    setSearchTerm("")
-    setSelectedCategoryFilter("")
-    setSelectedTagFilter("")
-    setPriceRange({ min: "", max: "" })
-    setStockRange({ min: "", max: "" })
+  const resetDiscountForm = () => {
+    setNewDiscount({
+      name: "",
+      description: "",
+      type: "percentage",
+      value: "",
+      reason: "",
+      startDate: "",
+      endDate: "",
+      isActive: true,
+      isGeneric: false,
+      productIds: [],
+    })
+    setEditingDiscount(null)
+    setIsDiscountDialogOpen(false)
+  }
+
+  const resetCategoryForm = () => {
+    setNewCategory({
+      name: "",
+      description: "",
+      isActive: true,
+    })
+    setEditingCategory(null)
+    setIsCategoryDialogOpen(false)
+  }
+
+  const resetTagForm = () => {
+    setNewTag({
+      name: "",
+      color: "#8B5CF6",
+      isActive: true,
+    })
+    setEditingTag(null)
+    setIsTagDialogOpen(false)
   }
 
   const getStatusColor = (status: string) => {
@@ -508,7 +552,7 @@ export default function AdminDashboard() {
       case "en_proceso":
         return "bg-purple-100 text-purple-800"
       case "enviado":
-        return "bg-green-100 text-green-800"
+        return "bg-orange-100 text-orange-800"
       case "entregado":
         return "bg-green-100 text-green-800"
       case "cancelado":
@@ -518,182 +562,453 @@ export default function AdminDashboard() {
     }
   }
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "pendiente":
-        return "Pendiente"
-      case "aceptado":
-        return "Aceptado"
-      case "en_proceso":
-        return "En Proceso"
-      case "enviado":
-        return "Enviado"
-      case "entregado":
-        return "Entregado"
-      case "cancelado":
-        return "Cancelado"
-      default:
-        return status
+  const handleStatusChange = (orderId: string, newStatus: string) => {
+    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+    toast({
+      title: "Estado actualizado",
+      description: `El pedido ${orderId} ha sido actualizado a ${newStatus}`,
+    })
+  }
+
+  const handleAddProduct = () => {
+    if (!newProduct.name || !newProduct.price) {
+      toast({
+        title: "Error",
+        description: "Por favor completa los campos requeridos",
+        variant: "destructive",
+      })
+      return
     }
+
+    const product = {
+      id: editingProduct ? editingProduct.id : products.length + 1,
+      name: newProduct.name,
+      price: Number.parseFloat(newProduct.price),
+      stock: Number.parseInt(newProduct.stock) || 0,
+      category: newProduct.category,
+      status: "active",
+      image: newProduct.images[0] || "/placeholder.svg?height=100&width=100",
+      availabilityType: newProduct.availabilityType,
+      estimatedDeliveryDays: Number.parseInt(newProduct.estimatedDeliveryDays),
+      hasWarranty: newProduct.hasWarranty,
+      warrantyDuration: newProduct.hasWarranty ? Number.parseInt(newProduct.warrantyDuration) : undefined,
+      warrantyUnit: newProduct.hasWarranty ? newProduct.warrantyUnit : undefined,
+      discountId: newProduct.discountId || null,
+      hasReturns: newProduct.hasReturns,
+      returnDays: newProduct.hasReturns ? Number.parseInt(newProduct.returnDays) : undefined,
+    }
+
+    if (editingProduct) {
+      setProducts(products.map((p) => (p.id === editingProduct.id ? product : p)))
+      toast({
+        title: "Producto actualizado",
+        description: "El producto se actualizó correctamente",
+      })
+    } else {
+      setProducts([...products, product])
+      toast({
+        title: "Producto agregado",
+        description: "El producto ha sido agregado exitosamente",
+      })
+    }
+
+    resetProductForm()
   }
 
-  const handleLogout = () => {
-    logout()
-    router.push("/")
+  const handleAddDiscount = () => {
+    if (!newDiscount.name || !newDiscount.value) {
+      toast({
+        title: "Error",
+        description: "Por favor completa los campos requeridos",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const discount = {
+      id: editingDiscount ? editingDiscount.id : `desc_${Date.now()}`,
+      name: newDiscount.name,
+      description: newDiscount.description,
+      type: newDiscount.type,
+      value: Number.parseFloat(newDiscount.value),
+      reason: newDiscount.reason,
+      startDate: newDiscount.isGeneric ? undefined : newDiscount.startDate,
+      endDate: newDiscount.isGeneric ? undefined : newDiscount.endDate,
+      isActive: newDiscount.isActive,
+      isGeneric: newDiscount.isGeneric,
+      productIds: newDiscount.productIds,
+      createdAt: editingDiscount ? editingDiscount.createdAt : new Date().toISOString(),
+    }
+
+    if (editingDiscount) {
+      setDiscounts(discounts.map((d) => (d.id === editingDiscount.id ? discount : d)))
+      toast({
+        title: "Descuento actualizado",
+        description: "El descuento se actualizó correctamente",
+      })
+    } else {
+      setDiscounts([...discounts, discount])
+      toast({
+        title: "Descuento creado",
+        description: "El descuento ha sido creado exitosamente",
+      })
+    }
+
+    resetDiscountForm()
   }
 
-  if (!user || user.role !== "admin") {
-    return null
+  const handleAddCategory = () => {
+    if (!newCategory.name) {
+      toast({
+        title: "Error",
+        description: "Por favor completa el nombre de la categoría",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const category = {
+      id: editingCategory ? editingCategory.id : `cat_${Date.now()}`,
+      name: newCategory.name,
+      description: newCategory.description,
+      isActive: newCategory.isActive,
+      createdAt: editingCategory ? editingCategory.createdAt : new Date().toISOString(),
+    }
+
+    if (editingCategory) {
+      setCategories(categories.map((c) => (c.id === editingCategory.id ? category : c)))
+      toast({
+        title: "Categoría actualizada",
+        description: "La categoría se actualizó correctamente",
+      })
+    } else {
+      setCategories([...categories, category])
+      toast({
+        title: "Categoría creada",
+        description: "La categoría ha sido creada exitosamente",
+      })
+    }
+
+    resetCategoryForm()
   }
 
-  const stats = {
-    totalProducts: products.length,
-    totalValue: products.reduce((sum, p) => sum + p.price * p.stock, 0),
-    lowStock: products.filter((p) => p.stock < 10).length,
-    newProducts: products.filter((p) => p.isNew).length,
-    totalOrders: orders.length,
-    pendingOrders: orders.filter((order) => order.status === "pendiente").length,
-    totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-    totalCategories: categories.length,
-    totalTags: tags.length,
-    activeDiscounts: discounts.filter((d) => d.isActive).length,
+  const handleAddTag = () => {
+    if (!newTag.name) {
+      toast({
+        title: "Error",
+        description: "Por favor completa el nombre del tag",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const tag = {
+      id: editingTag ? editingTag.id : `tag_${Date.now()}`,
+      name: newTag.name,
+      color: newTag.color,
+      isActive: newTag.isActive,
+      createdAt: editingTag ? editingTag.createdAt : new Date().toISOString(),
+    }
+
+    if (editingTag) {
+      setTags(tags.map((t) => (t.id === editingTag.id ? tag : t)))
+      toast({
+        title: "Tag actualizado",
+        description: "El tag se actualizó correctamente",
+      })
+    } else {
+      setTags([...tags, tag])
+      toast({
+        title: "Tag creado",
+        description: "El tag ha sido creado exitosamente",
+      })
+    }
+
+    resetTagForm()
   }
+
+  const handleProductToggleForDiscount = (productId: number) => {
+    setNewDiscount((prev) => {
+      const productIds = [...prev.productIds]
+      const index = productIds.indexOf(productId)
+      if (index > -1) {
+        productIds.splice(index, 1)
+      } else {
+        productIds.push(productId)
+      }
+      return { ...prev, productIds }
+    })
+  }
+
+  // Mobile navigation component
+  const MobileNavigation = () => (
+    <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="sm" className="md:hidden">
+          <Menu className="h-4 w-4" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-80">
+        <div className="space-y-4 py-4">
+          <div className="px-3 py-2">
+            <h2 className="mb-2 px-4 text-lg font-semibold">Panel de Admin</h2>
+            <div className="space-y-1">
+              {[
+                { id: "overview", label: "Resumen", icon: DollarSign },
+                { id: "orders", label: "Pedidos", icon: ShoppingCart },
+                { id: "products", label: "Productos", icon: Package },
+                { id: "categories", label: "Categorías", icon: Folder },
+                { id: "discounts", label: "Descuentos", icon: Percent },
+                { id: "settings", label: "Configuración", icon: Save },
+              ].map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant={activeTab === tab.id ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab(tab.id)
+                    setIsMobileMenuOpen(false)
+                  }}
+                >
+                  <tab.icon className="mr-2 h-4 w-4" />
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-              <p className="text-gray-600">Bienvenido, {user.name}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Panel de Administración</h1>
+              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Gestiona tu tienda de bisutería</p>
             </div>
-            <Button onClick={handleLogout} variant="outline">
-              <LogOut className="w-4 h-4 mr-2" />
-              Cerrar Sesión
-            </Button>
+            <MobileNavigation />
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab("products")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === "products"
-                  ? "border-rose-500 text-rose-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Productos
-            </button>
-            <button
-              onClick={() => setActiveTab("categories")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === "categories"
-                  ? "border-rose-500 text-rose-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Categorías & Tags
-            </button>
-            <button
-              onClick={() => setActiveTab("discounts")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === "discounts"
-                  ? "border-rose-500 text-rose-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Descuentos
-            </button>
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === "orders"
-                  ? "border-rose-500 text-rose-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Pedidos ({orders.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === "settings"
-                  ? "border-rose-500 text-rose-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              Configuración
-            </button>
-          </nav>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="hidden md:grid w-full grid-cols-6">
+            <TabsTrigger value="overview">Resumen</TabsTrigger>
+            <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            <TabsTrigger value="products">Productos</TabsTrigger>
+            <TabsTrigger value="categories">Categorías</TabsTrigger>
+            <TabsTrigger value="discounts">Descuentos</TabsTrigger>
+            <TabsTrigger value="settings">Configuración</TabsTrigger>
+          </TabsList>
 
-        {/* Products Tab */}
-        {activeTab === "products" && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Productos</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalProducts}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Valor Inventario</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Pedidos</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${stats.totalValue.toFixed(2)}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalOrders}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Stock Bajo</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{stats.lowStock}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Productos Nuevos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Clientes</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{stats.newProducts}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalCustomers}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Ingresos Totales</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">${mockStats.totalRevenue.toFixed(2)}</div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Filtros de Productos */}
-            <Card className="mb-6">
+            {/* Recent Orders */}
+            <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    <Filter className="w-5 h-5 mr-2" />
+                <CardTitle className="text-lg sm:text-xl">Pedidos Recientes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 sm:space-y-4">
+                  {orders.slice(0, 5).map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg space-y-2 sm:space-y-0"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm sm:text-base">{order.customer}</p>
+                        <p className="text-xs sm:text-sm text-gray-600">{order.email}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{order.date}</p>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <p className="font-bold text-sm sm:text-base">${order.total.toFixed(2)}</p>
+                        <Badge className={`${getStatusColor(order.status)} text-xs`}>{order.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-4 sm:space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">Gestión de Pedidos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 sm:space-y-4">
+                  {orders.map((order) => (
+                    <div key={order.id} className="border rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-sm sm:text-base">{order.id}</h3>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            {order.customer} - {order.email}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            {order.date} - {order.items} items
+                          </p>
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className="font-bold text-base sm:text-lg">${order.total.toFixed(2)}</p>
+                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value)}>
+                          <SelectTrigger className="w-full sm:w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendiente">Pendiente</SelectItem>
+                            <SelectItem value="aceptado">Aceptado</SelectItem>
+                            <SelectItem value="en_proceso">En Proceso</SelectItem>
+                            <SelectItem value="enviado">Enviado</SelectItem>
+                            <SelectItem value="entregado">Entregado</SelectItem>
+                            <SelectItem value="cancelado">Cancelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalles
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products" className="space-y-4 sm:space-y-6">
+            {/* Stats Cards for Products */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Productos</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalProducts}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {mockProducts.filter((p) => p.status === "active").length} activos •{" "}
+                    {mockProducts.filter((p) => p.status === "inactive").length} inactivos
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Valor Inventario</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    ${mockProducts.reduce((sum, p) => sum + p.price * p.stock, 0).toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Stock Bajo</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                    {mockProducts.filter((p) => p.stock < 10 && p.availabilityType !== "order_only").length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">Productos con menos de 10 unidades</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Sin Stock</CardTitle>
+                  <XCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                    {mockProducts.filter((p) => p.stock === 0 && p.availabilityType !== "order_only").length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Filters Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                  <CardTitle className="flex items-center text-lg sm:text-xl">
+                    <Filter className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
                     Filtros de Productos
                   </CardTitle>
-                  <Button variant="outline" onClick={clearFilters}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("")
+                      setSelectedCategoryFilter("")
+                      setSelectedStatusFilter("")
+                      setSelectedAvailabilityFilter("")
+                      setPriceRange({ min: "", max: "" })
+                      setStockRange({ min: "", max: "" })
+                    }}
+                  >
                     Limpiar Filtros
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
@@ -713,32 +1028,40 @@ export default function AdminDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas las categorías</SelectItem>
-                      {categories
-                        .filter((cat) => cat.isActive)
-                        .map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 
                   <Select
-                    value={selectedTagFilter || "all"}
-                    onValueChange={(value) => setSelectedTagFilter(value === "all" ? "" : value)}
+                    value={selectedStatusFilter || "all"}
+                    onValueChange={(value) => setSelectedStatusFilter(value === "all" ? "" : value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Tag" />
+                      <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos los tags</SelectItem>
-                      {tags
-                        .filter((tag) => tag.isActive)
-                        .map((tag) => (
-                          <SelectItem key={tag.id} value={tag.id}>
-                            {tag.name}
-                          </SelectItem>
-                        ))}
+                      <SelectItem value="all">Todos los estados</SelectItem>
+                      <SelectItem value="active">Activos</SelectItem>
+                      <SelectItem value="inactive">Inactivos</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={selectedAvailabilityFilter || "all"}
+                    onValueChange={(value) => setSelectedAvailabilityFilter(value === "all" ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Disponibilidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los tipos</SelectItem>
+                      <SelectItem value="stock_only">Solo Stock</SelectItem>
+                      <SelectItem value="stock_and_order">Stock + Pedido</SelectItem>
+                      <SelectItem value="order_only">Solo Pedido</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -772,7 +1095,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
                   Mostrando {filteredProducts.length} de {products.length} productos
                 </div>
               </CardContent>
@@ -781,420 +1104,505 @@ export default function AdminDashboard() {
             {/* Products Management */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                   <div>
-                    <CardTitle>Gestión de Productos</CardTitle>
-                    <CardDescription>Administra tu inventario de bisutería artesanal</CardDescription>
+                    <CardTitle className="text-lg sm:text-xl">Gestión de Productos</CardTitle>
+                    <CardDescription className="text-sm">
+                      Administra tu inventario de bisutería artesanal
+                    </CardDescription>
                   </div>
-                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-rose-600 hover:bg-rose-700">
+                      <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Producto
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
                       <DialogHeader>
-                        <DialogTitle>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-lg sm:text-xl">
+                          {editingProduct ? "Editar Producto" : "Nuevo Producto"}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm">
                           {editingProduct
                             ? "Modifica los datos del producto"
                             : "Agrega un nuevo producto a tu inventario"}
                         </DialogDescription>
                       </DialogHeader>
-                      <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Información Básica */}
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Información Básica</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="name">Nombre del Producto *</Label>
-                              <Input
-                                id="name"
-                                value={formData.name}
-                                onChange={(e) => handleInputChange("name", e.target.value)}
-                                required
-                              />
+                      <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
+                        <form onSubmit={handleSubmitProduct} className="space-y-4 sm:space-y-6">
+                          {/* Información Básica */}
+                          <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">Información Básica</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div>
+                                <Label htmlFor="name" className="text-sm">
+                                  Nombre del Producto *
+                                </Label>
+                                <Input
+                                  id="name"
+                                  value={newProduct.name}
+                                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                  required
+                                  className="text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="price" className="text-sm">
+                                  Precio *
+                                </Label>
+                                <Input
+                                  id="price"
+                                  type="number"
+                                  step="0.01"
+                                  value={newProduct.price}
+                                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                                  required
+                                  className="text-sm"
+                                />
+                              </div>
                             </div>
-                            <div>
-                              <Label htmlFor="price">Precio *</Label>
-                              <Input
-                                id="price"
-                                type="number"
-                                step="0.01"
-                                value={formData.price}
-                                onChange={(e) => handleInputChange("price", e.target.value)}
-                                required
-                              />
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div>
+                                <Label htmlFor="category" className="text-sm">
+                                  Categoría *
+                                </Label>
+                                <Select
+                                  value={newProduct.category}
+                                  onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
+                                >
+                                  <SelectTrigger className="text-sm">
+                                    <SelectValue placeholder="Seleccionar categoría" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {categories.map((category) => (
+                                      <SelectItem key={category.id} value={category.name}>
+                                        {category.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="availabilityType" className="text-sm">
+                                  Tipo de Disponibilidad *
+                                </Label>
+                                <Select
+                                  value={newProduct.availabilityType}
+                                  onValueChange={(value) => setNewProduct({ ...newProduct, availabilityType: value })}
+                                >
+                                  <SelectTrigger className="text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="stock_only">
+                                      <div className="flex items-center space-x-2">
+                                        <Package className="w-4 h-4 text-blue-600" />
+                                        <span>Solo Stock</span>
+                                      </div>
+                                    </SelectItem>
+                                    <SelectItem value="stock_and_order">
+                                      <div className="flex items-center space-x-2">
+                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                        <span>Stock + Pedido</span>
+                                      </div>
+                                    </SelectItem>
+                                    <SelectItem value="order_only">
+                                      <div className="flex items-center space-x-2">
+                                        <Clock className="w-4 h-4 text-orange-600" />
+                                        <span>Solo Pedido</span>
+                                      </div>
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div>
+                                <Label htmlFor="stock" className="text-sm">
+                                  Stock {newProduct.availabilityType === "order_only" ? "(Opcional)" : "*"}
+                                </Label>
+                                <Input
+                                  id="stock"
+                                  type="number"
+                                  value={newProduct.stock}
+                                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                                  required={newProduct.availabilityType !== "order_only"}
+                                  disabled={newProduct.availabilityType === "order_only"}
+                                  placeholder={newProduct.availabilityType === "order_only" ? "0 (Sin stock)" : ""}
+                                  className="text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="estimatedDeliveryDays" className="text-sm">
+                                  Días de Entrega Estimados{" "}
+                                  {newProduct.availabilityType !== "stock_only" ? "*" : "(Opcional)"}
+                                </Label>
+                                <Input
+                                  id="estimatedDeliveryDays"
+                                  type="number"
+                                  value={newProduct.estimatedDeliveryDays}
+                                  onChange={(e) =>
+                                    setNewProduct({ ...newProduct, estimatedDeliveryDays: e.target.value })
+                                  }
+                                  required={newProduct.availabilityType !== "stock_only"}
+                                  placeholder="7"
+                                  className="text-sm"
+                                />
+                              </div>
+                            </div>
+
                             <div>
-                              <Label htmlFor="categoryId">Categoría *</Label>
+                              <Label htmlFor="discountId" className="text-sm">
+                                Descuento Asociado
+                              </Label>
                               <Select
-                                value={formData.categoryId}
-                                onValueChange={(value) => handleInputChange("categoryId", value)}
+                                value={newProduct.discountId || "none"}
+                                onValueChange={(value) =>
+                                  setNewProduct({ ...newProduct, discountId: value === "none" ? "" : value })
+                                }
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar categoría" />
+                                <SelectTrigger className="text-sm">
+                                  <SelectValue placeholder="Sin descuento" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {categories
-                                    .filter((cat) => cat.isActive)
-                                    .map((category) => (
-                                      <SelectItem key={category.id} value={category.id}>
-                                        {category.name}
+                                  <SelectItem value="none">Sin descuento</SelectItem>
+                                  {discounts
+                                    .filter((discount) => discount.isActive)
+                                    .map((discount) => (
+                                      <SelectItem key={discount.id} value={discount.id}>
+                                        {discount.name} (
+                                        {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value}`})
                                       </SelectItem>
                                     ))}
                                 </SelectContent>
                               </Select>
                             </div>
+
                             <div>
-                              <Label htmlFor="stock">Stock *</Label>
-                              <Input
-                                id="stock"
-                                type="number"
-                                value={formData.stock}
-                                onChange={(e) => handleInputChange("stock", e.target.value)}
+                              <Label htmlFor="description" className="text-sm">
+                                Descripción *
+                              </Label>
+                              <Textarea
+                                id="description"
+                                value={newProduct.description}
+                                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                                 required
+                                rows={3}
+                                className="text-sm"
                               />
                             </div>
                           </div>
 
-                          <div>
-                            <Label>Tags</Label>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {tags
-                                .filter((tag) => tag.isActive)
-                                .map((tag) => (
-                                  <div key={tag.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`tag-${tag.id}`}
-                                      checked={formData.tagIds.includes(tag.id)}
-                                      onCheckedChange={() => handleTagToggle(tag.id)}
-                                    />
-                                    <Label htmlFor={`tag-${tag.id}`} className="text-sm" style={{ color: tag.color }}>
-                                      {tag.name}
-                                    </Label>
-                                  </div>
-                                ))}
+                          {/* Garantía */}
+                          <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">Garantía</h3>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="hasWarranty"
+                                checked={newProduct.hasWarranty}
+                                onCheckedChange={(checked) => setNewProduct({ ...newProduct, hasWarranty: checked })}
+                              />
+                              <Label htmlFor="hasWarranty" className="text-sm">
+                                Este producto tiene garantía
+                              </Label>
                             </div>
+
+                            {newProduct.hasWarranty && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                  <Label htmlFor="warrantyDuration" className="text-sm">
+                                    Duración de la Garantía *
+                                  </Label>
+                                  <Input
+                                    id="warrantyDuration"
+                                    type="number"
+                                    value={newProduct.warrantyDuration}
+                                    onChange={(e) => setNewProduct({ ...newProduct, warrantyDuration: e.target.value })}
+                                    required={newProduct.hasWarranty}
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="warrantyUnit" className="text-sm">
+                                    Unidad *
+                                  </Label>
+                                  <Select
+                                    value={newProduct.warrantyUnit}
+                                    onValueChange={(value) => setNewProduct({ ...newProduct, warrantyUnit: value })}
+                                  >
+                                    <SelectTrigger className="text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="days">Días</SelectItem>
+                                      <SelectItem value="months">Meses</SelectItem>
+                                      <SelectItem value="years">Años</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          <div>
-                            <Label htmlFor="discountId">Descuento Asociado</Label>
-                            <Select
-                              value={formData.discountId || "none"}
-                              onValueChange={(value) => handleInputChange("discountId", value === "none" ? "" : value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sin descuento" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Sin descuento</SelectItem>
-                                {discounts
-                                  .filter((discount) => discount.isActive)
-                                  .map((discount) => (
-                                    <SelectItem key={discount.id} value={discount.id}>
-                                      {discount.name} (
-                                      {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value}`})
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          {/* Política de Devoluciones */}
+                          <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">Política de Devoluciones</h3>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="hasReturns"
+                                checked={newProduct.hasReturns}
+                                onCheckedChange={(checked) => setNewProduct({ ...newProduct, hasReturns: checked })}
+                              />
+                              <Label htmlFor="hasReturns" className="text-sm">
+                                Este producto acepta devoluciones
+                              </Label>
+                            </div>
 
-                          <div>
-                            <Label htmlFor="description">Descripción *</Label>
-                            <Textarea
-                              id="description"
-                              value={formData.description}
-                              onChange={(e) => handleInputChange("description", e.target.value)}
-                              required
-                              rows={3}
-                            />
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="isNew"
-                              checked={formData.isNew}
-                              onCheckedChange={(checked) => handleInputChange("isNew", checked)}
-                            />
-                            <Label htmlFor="isNew">Marcar como producto nuevo</Label>
-                          </div>
-                        </div>
-
-                        {/* Garantía */}
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Garantía</h3>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="hasWarranty"
-                              checked={formData.hasWarranty}
-                              onCheckedChange={(checked) => handleInputChange("hasWarranty", checked)}
-                            />
-                            <Label htmlFor="hasWarranty">Este producto tiene garantía</Label>
-                          </div>
-
-                          {formData.hasWarranty && (
-                            <div className="grid grid-cols-2 gap-4">
+                            {newProduct.hasReturns && (
                               <div>
-                                <Label htmlFor="warrantyDuration">Duración de la Garantía *</Label>
+                                <Label htmlFor="returnDays" className="text-sm">
+                                  Días para devolución *
+                                </Label>
                                 <Input
-                                  id="warrantyDuration"
+                                  id="returnDays"
                                   type="number"
-                                  value={formData.warrantyDuration}
-                                  onChange={(e) => handleInputChange("warrantyDuration", e.target.value)}
-                                  required={formData.hasWarranty}
+                                  value={newProduct.returnDays}
+                                  onChange={(e) => setNewProduct({ ...newProduct, returnDays: e.target.value })}
+                                  required={newProduct.hasReturns}
+                                  placeholder="30"
+                                  className="text-sm"
                                 />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Número de días después de la compra en que se acepta la devolución
+                                </p>
                               </div>
-                              <div>
-                                <Label htmlFor="warrantyUnit">Unidad *</Label>
-                                <Select
-                                  value={formData.warrantyUnit}
-                                  onValueChange={(value) => handleInputChange("warrantyUnit", value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="days">Días</SelectItem>
-                                    <SelectItem value="months">Meses</SelectItem>
-                                    <SelectItem value="years">Años</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
 
-                        {/* Imágenes */}
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium">Imágenes del Producto</h3>
-                            <Button type="button" onClick={addImageField} variant="outline" size="sm">
-                              <Plus className="w-4 h-4 mr-2" />
-                              Agregar Imagen
+                          {/* Imágenes y Videos del Producto */}
+                          <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">Imágenes y Videos del Producto</h3>
+                            <ImageUpload
+                              images={newProduct.images}
+                              onImagesChange={(images) => setNewProduct({ ...newProduct, images })}
+                              maxImages={8}
+                              folder="products"
+                              allowVideos={true}
+                              maxVideoSize={50}
+                            />
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetProductForm}
+                              className="w-full sm:w-auto"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                              {editingProduct ? "Actualizar" : "Crear"} Producto
                             </Button>
                           </div>
-                          <div className="space-y-3">
-                            {formData.images.map((image, index) => (
-                              <div key={index} className="flex items-center space-x-2">
-                                <Input
-                                  type="url"
-                                  placeholder={`URL de imagen ${index + 1}`}
-                                  value={image}
-                                  onChange={(e) => handleImageChange(index, e.target.value)}
-                                />
-                                {formData.images.length > 1 && (
-                                  <Button
-                                    type="button"
-                                    onClick={() => removeImageField(index)}
-                                    variant="outline"
-                                    size="sm"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Información Detallada */}
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Información Detallada (Opcional)</h3>
-
-                          <div>
-                            <Label htmlFor="story">Historia del Producto</Label>
-                            <Textarea
-                              id="story"
-                              value={formData.story}
-                              onChange={(e) => handleInputChange("story", e.target.value)}
-                              placeholder="Cuenta la historia detrás de esta pieza..."
-                              rows={4}
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="materials">Materiales (separados por comas)</Label>
-                            <Input
-                              id="materials"
-                              value={formData.materials}
-                              onChange={(e) => handleInputChange("materials", e.target.value)}
-                              placeholder="Ej: Plata 925, Cristales naturales, Hilo de seda"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="dimensions">Dimensiones</Label>
-                            <Input
-                              id="dimensions"
-                              value={formData.dimensions}
-                              onChange={(e) => handleInputChange("dimensions", e.target.value)}
-                              placeholder="Ej: 2.5cm x 2cm, Cadena: 45cm"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="care">Instrucciones de Cuidado</Label>
-                            <Textarea
-                              id="care"
-                              value={formData.care}
-                              onChange={(e) => handleInputChange("care", e.target.value)}
-                              placeholder="Ej: Evitar contacto con agua, limpiar con paño suave..."
-                              rows={3}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end space-x-2 pt-4 border-t">
-                          <Button type="button" variant="outline" onClick={resetForm}>
-                            Cancelar
-                          </Button>
-                          <Button type="submit" className="bg-rose-600 hover:bg-rose-700">
-                            {editingProduct ? "Actualizar" : "Crear"} Producto
-                          </Button>
-                        </div>
-                      </form>
+                        </form>
+                      </ScrollArea>
                     </DialogContent>
                   </Dialog>
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Imagen</TableHead>
-                      <TableHead>Producto</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Tags</TableHead>
-                      <TableHead>Precio</TableHead>
-                      <TableHead>Descuento</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Garantía</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedProducts.map((product) => {
-                      const category = categories.find((cat) => cat.id === product.categoryId)
-                      const productTags = tags.filter((tag) => product.tagIds?.includes(tag.id))
-                      const discount = discounts.find((d) => d.id === product.discountId)
-                      const { price: discountedPrice } = calculateDiscountedPrice(product.price, product.id)
-
-                      return (
-                        <TableRow key={product.id} className="cursor-pointer hover:bg-gray-50">
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            <Image
-                              src={product.images[0] || "/placeholder.svg"}
-                              alt={product.name}
-                              width={50}
-                              height={50}
-                              className="rounded-lg object-cover"
-                            />
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
-                              <p className="text-xs text-gray-500">
-                                {product.images.length} imagen{product.images.length !== 1 ? "es" : ""}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            <Badge variant="secondary" className="capitalize">
-                              {category?.name || "Sin categoría"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            <div className="flex flex-wrap gap-1">
-                              {productTags.map((tag) => (
-                                <Badge
-                                  key={tag.id}
-                                  variant="outline"
-                                  className="text-xs"
-                                  style={{ borderColor: tag.color, color: tag.color }}
-                                >
-                                  {tag.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            <div className="font-medium">
-                              {discount ? (
-                                <div>
-                                  <span className="text-red-600">${discountedPrice.toFixed(2)}</span>
-                                  <span className="text-gray-500 line-through text-sm ml-2">
-                                    ${product.price.toFixed(2)}
+                {/* Mobile Product Cards */}
+                <div className="block sm:hidden space-y-4">
+                  {paginatedProducts.map((product) => {
+                    const discount = discounts.find((d) => d.id === product.discountId)
+                    return (
+                      <Card key={product.id} className="p-4">
+                        <div className="flex space-x-3">
+                          <img
+                            src={product.image || "/placeholder.svg"}
+                            alt={product.name}
+                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                                <p className="text-xs text-gray-600">{product.category}</p>
+                                <div className="flex items-center space-x-1 mt-1">
+                                  {getAvailabilityIcon(product.availabilityType)}
+                                  <span className="text-xs text-gray-500">
+                                    {getAvailabilityText(product.availabilityType)}
                                   </span>
                                 </div>
+                              </div>
+                              <div className="text-right ml-2">
+                                <p className="font-medium text-sm">${product.price.toFixed(2)}</p>
+                                <Badge
+                                  variant={product.status === "active" ? "default" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  {product.status === "active" ? "Activo" : "Inactivo"}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => setViewingProduct(product)}>
+                                <Eye className="w-3 h-3 mr-1" />
+                                Ver
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )
+                  })}
+                </div>
+
+                {/* Desktop Table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Imagen</TableHead>
+                        <TableHead>Producto</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Disponibilidad</TableHead>
+                        <TableHead>Precio</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedProducts.map((product) => {
+                        const discount = discounts.find((d) => d.id === product.discountId)
+                        return (
+                          <TableRow key={product.id} className="cursor-pointer hover:bg-gray-50">
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              <img
+                                src={product.image || "/placeholder.svg"}
+                                alt={product.name}
+                                className="w-12 h-12 object-cover rounded-lg"
+                              />
+                            </TableCell>
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-gray-600 line-clamp-1">{product.category}</p>
+                                {discount && (
+                                  <Badge variant="outline" className="text-xs text-green-600 border-green-600 mt-1">
+                                    {discount.name}
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              <Badge variant="secondary" className="capitalize">
+                                {product.category}
+                              </Badge>
+                            </TableCell>
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              <div className="flex items-center space-x-2">
+                                {getAvailabilityIcon(product.availabilityType)}
+                                <div>
+                                  <p className="text-sm font-medium">{getAvailabilityText(product.availabilityType)}</p>
+                                  {product.availabilityType !== "stock_only" && (
+                                    <p className="text-xs text-gray-500">{product.estimatedDeliveryDays} días</p>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              <div className="font-medium">
+                                {discount ? (
+                                  <div>
+                                    <span className="text-red-600">
+                                      $
+                                      {(
+                                        product.price *
+                                        (1 -
+                                          (discount.type === "percentage"
+                                            ? discount.value / 100
+                                            : discount.value / product.price))
+                                      ).toFixed(2)}
+                                    </span>
+                                    <span className="text-gray-500 line-through text-sm ml-2">
+                                      ${product.price.toFixed(2)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span>${product.price.toFixed(2)}</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              {product.availabilityType === "order_only" ? (
+                                <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                  Por Encargo
+                                </Badge>
                               ) : (
-                                <span>${product.price.toFixed(2)}</span>
+                                <span className={product.stock < 10 ? "text-red-600 font-medium" : ""}>
+                                  {product.stock}
+                                </span>
                               )}
-                            </div>
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            {discount ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">
-                                {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value}`}
+                            </TableCell>
+                            <TableCell onClick={() => setViewingProduct(product)}>
+                              <Badge variant={product.status === "active" ? "default" : "secondary"}>
+                                {product.status === "active" ? "Activo" : "Inactivo"}
                               </Badge>
-                            ) : (
-                              <span className="text-gray-400 text-sm">Sin descuento</span>
-                            )}
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            <span className={product.stock < 10 ? "text-red-600 font-medium" : ""}>
-                              {product.stock}
-                            </span>
-                          </TableCell>
-                          <TableCell onClick={() => setViewingProduct(product)}>
-                            {product.warranty?.hasWarranty ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">
-                                {product.warranty.duration} {product.warranty.unit}
-                              </Badge>
-                            ) : (
-                              <span className="text-gray-400 text-sm">Sin garantía</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(product.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {/* Paginación */}
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row items-center justify-between mt-4 space-y-3 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <div className="text-xs sm:text-sm text-gray-600">
                       Mostrando {startIndex + 1} a {Math.min(endIndex, filteredProducts.length)} de{" "}
                       {filteredProducts.length} productos
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Label htmlFor="itemsPerPage" className="text-sm">
+                      <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm">
                         Mostrar:
                       </Label>
                       <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                        <SelectTrigger className="w-20">
+                        <SelectTrigger className="w-16 sm:w-20">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1207,7 +1615,7 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1257,18 +1665,18 @@ export default function AdminDashboard() {
 
             {/* Product View Dialog */}
             <Dialog open={!!viewingProduct} onOpenChange={() => setViewingProduct(null)}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
                 <DialogHeader>
-                  <div className="flex items-center justify-between">
-                    <DialogTitle>{viewingProduct?.name}</DialogTitle>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                    <DialogTitle className="text-lg sm:text-xl">{viewingProduct?.name}</DialogTitle>
                     <Button
                       onClick={() => {
                         if (viewingProduct) {
-                          handleEdit(viewingProduct)
+                          handleEditProduct(viewingProduct)
                           setViewingProduct(null)
                         }
                       }}
-                      className="bg-rose-600 hover:bg-rose-700"
+                      className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       Editar Producto
@@ -1276,1068 +1684,854 @@ export default function AdminDashboard() {
                   </div>
                 </DialogHeader>
                 {viewingProduct && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                          <Image
-                            src={viewingProduct.images[0] || "/placeholder.svg"}
-                            alt={viewingProduct.name}
-                            width={400}
-                            height={400}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        {viewingProduct.images.length > 1 && (
-                          <div className="grid grid-cols-4 gap-2">
-                            {viewingProduct.images.slice(1).map((image, index) => (
-                              <div key={index} className="aspect-square bg-gray-100 rounded overflow-hidden">
-                                <Image
-                                  src={image || "/placeholder.svg"}
-                                  alt={`${viewingProduct.name} ${index + 2}`}
-                                  width={100}
-                                  height={100}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-4">
+                  <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <div>
-                          <h3 className="text-lg font-semibold mb-2">Información General</h3>
-                          <div className="space-y-2">
-                            <p>
-                              <strong>Precio:</strong> ${viewingProduct.price.toFixed(2)}
-                            </p>
-                            <p>
-                              <strong>Stock:</strong> {viewingProduct.stock} unidades
-                            </p>
-                            <p>
-                              <strong>Categoría:</strong>{" "}
-                              {categories.find((c) => c.id === viewingProduct.categoryId)?.name || "Sin categoría"}
-                            </p>
-                            {viewingProduct.tagIds && viewingProduct.tagIds.length > 0 && (
-                              <div>
-                                <strong>Tags:</strong>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {tags
-                                    .filter((tag) => viewingProduct.tagIds?.includes(tag.id))
-                                    .map((tag) => (
-                                      <Badge
-                                        key={tag.id}
-                                        variant="outline"
-                                        style={{ borderColor: tag.color, color: tag.color }}
-                                      >
-                                        {tag.name}
-                                      </Badge>
-                                    ))}
+                          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+                            <img
+                              src={viewingProduct.image || "/placeholder.svg"}
+                              alt={viewingProduct.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 sm:space-y-4">
+                          <div>
+                            <h3 className="text-base sm:text-lg font-semibold mb-2">Información General</h3>
+                            <div className="space-y-2 text-sm">
+                              <p>
+                                <strong>Precio:</strong> ${viewingProduct.price.toFixed(2)}
+                              </p>
+                              <div className="flex items-center space-x-2">
+                                <strong>Disponibilidad:</strong>
+                                {getAvailabilityIcon(viewingProduct.availabilityType)}
+                                <span>{getAvailabilityText(viewingProduct.availabilityType)}</span>
+                              </div>
+                              {viewingProduct.availabilityType !== "order_only" && (
+                                <p>
+                                  <strong>Stock:</strong> {viewingProduct.stock} unidades
+                                </p>
+                              )}
+                              {viewingProduct.estimatedDeliveryDays && (
+                                <p>
+                                  <strong>Tiempo de entrega:</strong> {viewingProduct.estimatedDeliveryDays} días
+                                </p>
+                              )}
+                              <p>
+                                <strong>Categoría:</strong> {viewingProduct.category}
+                              </p>
+                              {viewingProduct.hasWarranty && (
+                                <p>
+                                  <strong>Garantía:</strong> {viewingProduct.warrantyDuration}{" "}
+                                  {viewingProduct.warrantyUnit}
+                                </p>
+                              )}
+                              {viewingProduct.discountId && (
+                                <div>
+                                  <strong>Descuento:</strong>
+                                  <Badge variant="outline" className="ml-2 text-green-600 border-green-600">
+                                    {discounts.find((d) => d.id === viewingProduct.discountId)?.name}
+                                  </Badge>
                                 </div>
-                              </div>
-                            )}
-                            {viewingProduct.discountId && (
-                              <div>
-                                <strong>Descuento:</strong>
-                                <Badge variant="outline" className="ml-2 text-green-600 border-green-600">
-                                  {discounts.find((d) => d.id === viewingProduct.discountId)?.name}
+                              )}
+                              <p>
+                                <strong>Estado:</strong>
+                                <Badge
+                                  variant={viewingProduct.status === "active" ? "default" : "secondary"}
+                                  className="ml-2"
+                                >
+                                  {viewingProduct.status === "active" ? "Activo" : "Inactivo"}
                                 </Badge>
-                              </div>
-                            )}
+                              </p>
+                              {viewingProduct.hasReturns && (
+                                <p>
+                                  <strong>Devoluciones:</strong> Acepta devoluciones hasta {viewingProduct.returnDays}{" "}
+                                  días después de la compra
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        <div>
-                          <h3 className="text-lg font-semibold mb-2">Descripción</h3>
-                          <p className="text-gray-700">{viewingProduct.description}</p>
-                        </div>
-
-                        {viewingProduct.story && (
-                          <div>
-                            <h3 className="text-lg font-semibold mb-2">Historia</h3>
-                            <p className="text-gray-700">{viewingProduct.story}</p>
-                          </div>
-                        )}
-
-                        {viewingProduct.materials && (
-                          <div>
-                            <h3 className="text-lg font-semibold mb-2">Materiales</h3>
-                            <ul className="list-disc list-inside space-y-1">
-                              {viewingProduct.materials.map((material, index) => (
-                                <li key={index} className="text-gray-700">
-                                  {material}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {viewingProduct.dimensions && (
-                          <div>
-                            <h3 className="text-lg font-semibold mb-2">Dimensiones</h3>
-                            <p className="text-gray-700">{viewingProduct.dimensions}</p>
-                          </div>
-                        )}
-
-                        {viewingProduct.care && (
-                          <div>
-                            <h3 className="text-lg font-semibold mb-2">Cuidados</h3>
-                            <p className="text-gray-700">{viewingProduct.care}</p>
-                          </div>
-                        )}
-
-                        {viewingProduct.warranty?.hasWarranty && (
-                          <div>
-                            <h3 className="text-lg font-semibold mb-2">Garantía</h3>
-                            <Badge variant="outline" className="text-green-600 border-green-600">
-                              {viewingProduct.warranty.duration} {viewingProduct.warranty.unit}
-                            </Badge>
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
+                  </ScrollArea>
                 )}
               </DialogContent>
             </Dialog>
-          </>
-        )}
+          </TabsContent>
 
-        {/* Categories & Tags Tab */}
-        {activeTab === "categories" && (
-          <div className="space-y-8">
-            {/* Categories Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Gestión de Categorías</CardTitle>
-                    <CardDescription>Organiza tus productos por categorías</CardDescription>
-                  </div>
-                  <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-rose-600 hover:bg-rose-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nueva Categoría
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{editingCategory ? "Editar Categoría" : "Nueva Categoría"}</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleCategorySubmit} className="space-y-4">
-                        <div>
-                          <Label htmlFor="categoryName">Nombre *</Label>
-                          <Input
-                            id="categoryName"
-                            value={categoryFormData.name}
-                            onChange={(e) => setCategoryFormData((prev) => ({ ...prev, name: e.target.value }))}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="categoryDescription">Descripción</Label>
-                          <Textarea
-                            id="categoryDescription"
-                            value={categoryFormData.description}
-                            onChange={(e) => setCategoryFormData((prev) => ({ ...prev, description: e.target.value }))}
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="categoryActive"
-                            checked={categoryFormData.isActive}
-                            onCheckedChange={(checked) =>
-                              setCategoryFormData((prev) => ({ ...prev, isActive: checked as boolean }))
-                            }
-                          />
-                          <Label htmlFor="categoryActive">Categoría activa</Label>
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setIsCategoryDialogOpen(false)
-                              setEditingCategory(null)
-                              setCategoryFormData({ name: "", description: "", isActive: true })
-                            }}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button type="submit" className="bg-rose-600 hover:bg-rose-700">
-                            {editingCategory ? "Actualizar" : "Crear"}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Productos</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((category) => {
-                      const productCount = products.filter((p) => p.categoryId === category.id).length
-                      return (
-                        <TableRow key={category.id}>
-                          <TableCell className="font-medium">{category.name}</TableCell>
-                          <TableCell>{category.description || "-"}</TableCell>
-                          <TableCell>
-                            <Badge variant={category.isActive ? "default" : "secondary"}>
-                              {category.isActive ? "Activa" : "Inactiva"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{productCount} productos</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingCategory(category)
-                                  setCategoryFormData({
-                                    name: category.name,
-                                    description: category.description || "",
-                                    isActive: category.isActive,
-                                  })
-                                  setIsCategoryDialogOpen(true)
-                                }}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => deleteCategory(category.id)}
-                                className="text-red-600 hover:text-red-700"
-                                disabled={productCount > 0}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Tags Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Gestión de Tags</CardTitle>
-                    <CardDescription>Etiqueta tus productos para mejor organización</CardDescription>
-                  </div>
-                  <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-rose-600 hover:bg-rose-700">
-                        <Tag className="w-4 h-4 mr-2" />
-                        Nuevo Tag
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{editingTag ? "Editar Tag" : "Nuevo Tag"}</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleTagSubmit} className="space-y-4">
-                        <div>
-                          <Label htmlFor="tagName">Nombre *</Label>
-                          <Input
-                            id="tagName"
-                            value={tagFormData.name}
-                            onChange={(e) => setTagFormData((prev) => ({ ...prev, name: e.target.value }))}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="tagColor">Color</Label>
-                          <Input
-                            id="tagColor"
-                            type="color"
-                            value={tagFormData.color}
-                            onChange={(e) => setTagFormData((prev) => ({ ...prev, color: e.target.value }))}
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="tagActive"
-                            checked={tagFormData.isActive}
-                            onCheckedChange={(checked) =>
-                              setTagFormData((prev) => ({ ...prev, isActive: checked as boolean }))
-                            }
-                          />
-                          <Label htmlFor="tagActive">Tag activo</Label>
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setIsTagDialogOpen(false)
-                              setEditingTag(null)
-                              setTagFormData({ name: "", color: "#8B5CF6", isActive: true })
-                            }}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button type="submit" className="bg-rose-600 hover:bg-rose-700">
-                            {editingTag ? "Actualizar" : "Crear"}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Color</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Productos</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tags.map((tag) => {
-                      const productCount = products.filter((p) => p.tagIds?.includes(tag.id)).length
-                      return (
-                        <TableRow key={tag.id}>
-                          <TableCell className="font-medium">{tag.name}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tag.color }}></div>
-                              <span>{tag.color}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={tag.isActive ? "default" : "secondary"}>
-                              {tag.isActive ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{productCount} productos</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingTag(tag)
-                                  setTagFormData({
-                                    name: tag.name,
-                                    color: tag.color,
-                                    isActive: tag.isActive,
-                                  })
-                                  setIsTagDialogOpen(true)
-                                }}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => deleteTag(tag.id)}
-                                className="text-red-600 hover:text-red-700"
-                                disabled={productCount > 0}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Discounts Tab */}
-        {activeTab === "discounts" && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <TabsContent value="categories" className="space-y-4 sm:space-y-6">
+            {/* Stats Cards for Categories */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Descuentos Activos</CardTitle>
-                  <Percent className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Categorías</CardTitle>
+                  <Folder className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.activeDiscounts}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{categories.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {categories.filter((c) => c.isActive).length} activas •{" "}
+                    {categories.filter((c) => !c.isActive).length} inactivas
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Descuentos</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Tags</CardTitle>
+                  <Hash className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{discounts.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{tags.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {tags.filter((t) => t.isActive).length} activos • {tags.filter((t) => !t.isActive).length} inactivos
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Próximos a Vencer</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-amber-600">
-                    {
-                      discounts.filter((d) => {
-                        if (d.isGeneric || !d.endDate) return false
-                        const endDate = new Date(d.endDate)
-                        const now = new Date()
-                        const diffTime = endDate.getTime() - now.getTime()
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                        return diffDays <= 7 && diffDays > 0
-                      }).length
-                    }
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Gestión de Descuentos</CardTitle>
-                    <CardDescription>Crea y administra descuentos para tus productos</CardDescription>
-                  </div>
-                  <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-rose-600 hover:bg-rose-700">
-                        <Percent className="w-4 h-4 mr-2" />
-                        Nuevo Descuento
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>{editingDiscount ? "Editar Descuento" : "Nuevo Descuento"}</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleDiscountSubmit} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="discountName">Nombre del Descuento *</Label>
-                            <Input
-                              id="discountName"
-                              value={discountFormData.name}
-                              onChange={(e) => setDiscountFormData((prev) => ({ ...prev, name: e.target.value }))}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="discountReason">Motivo *</Label>
-                            <Select
-                              value={discountFormData.reason}
-                              onValueChange={(value) => setDiscountFormData((prev) => ({ ...prev, reason: value }))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar motivo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="black-friday">Black Friday</SelectItem>
-                                <SelectItem value="cyber-monday">Cyber Monday</SelectItem>
-                                <SelectItem value="navidad">Navidad</SelectItem>
-                                <SelectItem value="san-valentin">San Valentín</SelectItem>
-                                <SelectItem value="dia-madre">Día de la Madre</SelectItem>
-                                <SelectItem value="liquidacion">Liquidación</SelectItem>
-                                <SelectItem value="lanzamiento">Lanzamiento</SelectItem>
-                                <SelectItem value="cliente-frecuente">Cliente Frecuente</SelectItem>
-                                <SelectItem value="otro">Otro</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="discountDescription">Descripción</Label>
-                          <Textarea
-                            id="discountDescription"
-                            value={discountFormData.description}
-                            onChange={(e) => setDiscountFormData((prev) => ({ ...prev, description: e.target.value }))}
-                            placeholder="Describe el descuento..."
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="discountType">Tipo de Descuento *</Label>
-                            <Select
-                              value={discountFormData.type}
-                              onValueChange={(value) =>
-                                setDiscountFormData((prev) => ({ ...prev, type: value as "percentage" | "fixed" }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="percentage">Porcentaje (%)</SelectItem>
-                                <SelectItem value="fixed">Cantidad Fija ($)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="discountValue">
-                              Valor * {discountFormData.type === "percentage" ? "(%)" : "($)"}
-                            </Label>
-                            <Input
-                              id="discountValue"
-                              type="number"
-                              step="0.01"
-                              value={discountFormData.value}
-                              onChange={(e) => setDiscountFormData((prev) => ({ ...prev, value: e.target.value }))}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="isGeneric"
-                            checked={discountFormData.isGeneric}
-                            onCheckedChange={(checked) =>
-                              setDiscountFormData((prev) => ({ ...prev, isGeneric: checked as boolean }))
-                            }
-                          />
-                          <Label htmlFor="isGeneric">Descuento genérico (sin fecha límite)</Label>
-                        </div>
-
-                        {!discountFormData.isGeneric && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="startDate">Fecha de Inicio *</Label>
-                              <Input
-                                id="startDate"
-                                type="datetime-local"
-                                value={discountFormData.startDate}
-                                onChange={(e) =>
-                                  setDiscountFormData((prev) => ({ ...prev, startDate: e.target.value }))
-                                }
-                                required={!discountFormData.isGeneric}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="endDate">Fecha de Fin *</Label>
-                              <Input
-                                id="endDate"
-                                type="datetime-local"
-                                value={discountFormData.endDate}
-                                onChange={(e) => setDiscountFormData((prev) => ({ ...prev, endDate: e.target.value }))}
-                                required={!discountFormData.isGeneric}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        <div>
-                          <Label>Productos Aplicables *</Label>
-                          <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-3 space-y-2">
-                            {products.map((product) => (
-                              <div key={product.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`product-${product.id}`}
-                                  checked={discountFormData.productIds.includes(product.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setDiscountFormData((prev) => ({
-                                        ...prev,
-                                        productIds: [...prev.productIds, product.id],
-                                      }))
-                                    } else {
-                                      setDiscountFormData((prev) => ({
-                                        ...prev,
-                                        productIds: prev.productIds.filter((id) => id !== product.id),
-                                      }))
-                                    }
-                                  }}
-                                />
-                                <Label htmlFor={`product-${product.id}`} className="text-sm">
-                                  {product.name} - ${product.price.toFixed(2)}
-                                </Label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="discountActive"
-                            checked={discountFormData.isActive}
-                            onCheckedChange={(checked) =>
-                              setDiscountFormData((prev) => ({ ...prev, isActive: checked as boolean }))
-                            }
-                          />
-                          <Label htmlFor="discountActive">Descuento activo</Label>
-                        </div>
-
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setIsDiscountDialogOpen(false)
-                              setEditingDiscount(null)
-                              setDiscountFormData({
-                                name: "",
-                                description: "",
-                                type: "percentage",
-                                value: "",
-                                reason: "",
-                                startDate: "",
-                                endDate: "",
-                                isActive: true,
-                                isGeneric: false,
-                                productIds: [],
-                              })
-                            }}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button type="submit" className="bg-rose-600 hover:bg-rose-700">
-                            {editingDiscount ? "Actualizar" : "Crear"}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {discounts.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Percent className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No hay descuentos creados aún</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Motivo</TableHead>
-                        <TableHead>Vigencia</TableHead>
-                        <TableHead>Productos</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {discounts.map((discount) => {
-                        const now = new Date()
-                        const startDate = discount.startDate ? new Date(discount.startDate) : null
-                        const endDate = discount.endDate ? new Date(discount.endDate) : null
-                        const isActive =
-                          discount.isActive &&
-                          (discount.isGeneric || ((!startDate || startDate <= now) && (!endDate || endDate >= now)))
-
-                        return (
-                          <TableRow key={discount.id}>
-                            <TableCell className="font-medium">{discount.name}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{discount.type === "percentage" ? "Porcentaje" : "Fijo"}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value}`}
-                            </TableCell>
-                            <TableCell className="capitalize">{discount.reason.replace("-", " ")}</TableCell>
-                            <TableCell>
-                              {discount.isGeneric ? (
-                                <Badge variant="outline" className="text-blue-600 border-blue-600">
-                                  Genérico
-                                </Badge>
-                              ) : (
-                                <div className="text-sm">
-                                  <div>{startDate?.toLocaleDateString("es-ES")}</div>
-                                  <div className="text-gray-500">hasta {endDate?.toLocaleDateString("es-ES")}</div>
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>{discount.productIds.length} productos</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={isActive ? "default" : "secondary"}
-                                className={isActive ? "bg-green-100 text-green-800" : ""}
-                              >
-                                {isActive ? "Activo" : "Inactivo"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingDiscount(discount)
-                                    setDiscountFormData({
-                                      name: discount.name,
-                                      description: discount.description || "",
-                                      type: discount.type,
-                                      value: discount.value.toString(),
-                                      reason: discount.reason,
-                                      startDate: discount.startDate || "",
-                                      endDate: discount.endDate || "",
-                                      isActive: discount.isActive,
-                                      isGeneric: discount.isGeneric,
-                                      productIds: discount.productIds,
-                                    })
-                                    setIsDiscountDialogOpen(true)
-                                  }}
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => deleteDiscount(discount.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === "orders" && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Pedidos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Productos por Categoría</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalOrders}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pedidos Pendientes</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{stats.pendingOrders}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Promedio por Pedido</CardTitle>
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(2) : "0.00"}
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {Math.round(products.length / categories.length) || 0}
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">Promedio por categoría</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Más Popular</CardTitle>
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-base sm:text-lg font-bold">Collares</div>
+                  <div className="text-xs text-muted-foreground mt-1">Categoría con más productos</div>
                 </CardContent>
               </Card>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestión de Pedidos</CardTitle>
-                <CardDescription>Administra los pedidos de tus clientes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {orders.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No hay pedidos aún</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Items</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-mono text-sm">#{order.id.slice(-8)}</TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{order.customerName}</p>
-                              <p className="text-sm text-gray-600">{order.customerEmail}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(order.createdAt).toLocaleDateString("es-ES", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </TableCell>
-                          <TableCell>
-                            {order.items.length} producto{order.items.length !== 1 ? "s" : ""}
-                          </TableCell>
-                          <TableCell className="font-medium">${order.totalAmount.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Select
-                              value={order.status}
-                              onValueChange={(value) => handleOrderStatusChange(order.id, value)}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue>
-                                  <Badge className={getStatusColor(order.status)}>{getStatusText(order.status)}</Badge>
-                                </SelectValue>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pendiente">Pendiente</SelectItem>
-                                <SelectItem value="aceptado">Aceptado</SelectItem>
-                                <SelectItem value="en_proceso">En Proceso</SelectItem>
-                                <SelectItem value="enviado">Enviado</SelectItem>
-                                <SelectItem value="entregado">Entregado</SelectItem>
-                                <SelectItem value="cancelado">Cancelado</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => setViewingOrder(order)}>
-                              <Eye className="w-3 h-3 mr-1" />
-                              Ver
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Order Details Dialog */}
-            <Dialog open={!!viewingOrder} onOpenChange={() => setViewingOrder(null)}>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Detalles del Pedido #{viewingOrder?.id.slice(-8)}</DialogTitle>
-                </DialogHeader>
-                {viewingOrder && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-medium mb-2">Información del Cliente</h4>
-                        <p>
-                          <strong>Nombre:</strong> {viewingOrder.customerName}
-                        </p>
-                        <p>
-                          <strong>Email:</strong> {viewingOrder.customerEmail}
-                        </p>
-                        {viewingOrder.customerPhone && (
-                          <p>
-                            <strong>Teléfono:</strong> {viewingOrder.customerPhone}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-2">Información del Pedido</h4>
-                        <p>
-                          <strong>Fecha:</strong> {new Date(viewingOrder.createdAt).toLocaleDateString("es-ES")}
-                        </p>
-                        <p>
-                          <strong>Estado:</strong>
-                          <Badge className={`ml-2 ${getStatusColor(viewingOrder.status)}`}>
-                            {getStatusText(viewingOrder.status)}
-                          </Badge>
-                        </p>
-                        <p>
-                          <strong>Total:</strong> ${viewingOrder.totalAmount.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-
+            {/* Categories Management */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              {/* Categories Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                     <div>
-                      <h4 className="font-medium mb-2">Dirección de Envío</h4>
-                      <p>{viewingOrder.shippingAddress.address}</p>
-                      <p>
-                        {viewingOrder.shippingAddress.city}, {viewingOrder.shippingAddress.state}
-                      </p>
-                      <p>
-                        {viewingOrder.shippingAddress.zipCode}, {viewingOrder.shippingAddress.country}
-                      </p>
+                      <CardTitle className="text-lg sm:text-xl">Categorías</CardTitle>
+                      <CardDescription className="text-sm">Organiza tus productos por categorías</CardDescription>
                     </div>
-
-                    <div>
-                      <h4 className="font-medium mb-2">Productos</h4>
-                      <div className="space-y-2">
-                        {viewingOrder.items.map((item: any, index: number) => (
-                          <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                            <div className="flex items-center space-x-3">
-                              <Image
-                                src={item.image || "/placeholder.svg"}
-                                alt={item.name}
-                                width={40}
-                                height={40}
-                                className="rounded object-cover"
-                              />
-                              <div>
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
-                              </div>
-                            </div>
-                            <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                    <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nueva Categoría
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="text-lg">
+                            {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
+                          </DialogTitle>
+                          <DialogDescription className="text-sm">
+                            {editingCategory ? "Modifica los datos de la categoría" : "Crea una nueva categoría"}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmitCategory} className="space-y-4">
+                          <div>
+                            <Label htmlFor="category-name" className="text-sm">
+                              Nombre de la Categoría *
+                            </Label>
+                            <Input
+                              id="category-name"
+                              value={newCategory.name}
+                              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                              required
+                              placeholder="Ej: Collares"
+                              className="text-sm"
+                            />
                           </div>
-                        ))}
+                          <div>
+                            <Label htmlFor="category-description" className="text-sm">
+                              Descripción
+                            </Label>
+                            <Textarea
+                              id="category-description"
+                              value={newCategory.description}
+                              onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                              rows={3}
+                              placeholder="Descripción de la categoría..."
+                              className="text-sm"
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="category-active"
+                              checked={newCategory.isActive}
+                              onCheckedChange={(checked) => setNewCategory({ ...newCategory, isActive: checked })}
+                            />
+                            <Label htmlFor="category-active" className="text-sm">
+                              Categoría activa
+                            </Label>
+                          </div>
+                          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetCategoryForm}
+                              className="w-full sm:w-auto"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                              {editingCategory ? "Actualizar" : "Crear"} Categoría
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {categories.map((category) => (
+                      <div key={category.id} className="border rounded-lg p-3 sm:p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h3 className="font-semibold text-sm sm:text-base">{category.name}</h3>
+                              <Badge variant={category.isActive ? "default" : "secondary"} className="text-xs">
+                                {category.isActive ? "Activa" : "Inactiva"}
+                              </Badge>
+                            </div>
+                            {category.description && (
+                              <p className="text-xs sm:text-sm text-gray-600 mb-2">{category.description}</p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              {products.filter((p) => p.category === category.name).length} producto(s)
+                            </p>
+                          </div>
+                          <div className="flex space-x-1 ml-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}>
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteCategory(category.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
 
-                    {viewingOrder.notes && (
-                      <div>
-                        <h4 className="font-medium mb-2">Notas del Cliente</h4>
-                        <p className="text-gray-700 bg-gray-50 p-3 rounded">{viewingOrder.notes}</p>
+                    {categories.length === 0 && (
+                      <div className="text-center py-6 sm:py-8">
+                        <Folder className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                        <p className="text-gray-500 text-sm sm:text-base font-medium">No hay categorías creadas</p>
+                        <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
+                          Crea tu primera categoría para organizar tus productos
+                        </p>
                       </div>
                     )}
                   </div>
-                )}
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
+                </CardContent>
+              </Card>
 
-        {/* Settings Tab */}
-        {activeTab === "settings" && (
-          <div className="space-y-6">
+              {/* Tags Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl">Tags</CardTitle>
+                      <CardDescription className="text-sm">Etiquetas para clasificar productos</CardDescription>
+                    </div>
+                    <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nuevo Tag
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="text-lg">{editingTag ? "Editar Tag" : "Nuevo Tag"}</DialogTitle>
+                          <DialogDescription className="text-sm">
+                            {editingTag ? "Modifica los datos del tag" : "Crea un nuevo tag"}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmitTag} className="space-y-4">
+                          <div>
+                            <Label htmlFor="tag-name" className="text-sm">
+                              Nombre del Tag *
+                            </Label>
+                            <Input
+                              id="tag-name"
+                              value={newTag.name}
+                              onChange={(e) => setNewTag({ ...newTag, name: e.target.value })}
+                              required
+                              placeholder="Ej: elegante"
+                              className="text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="tag-color" className="text-sm">
+                              Color del Tag
+                            </Label>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Input
+                                id="tag-color"
+                                type="color"
+                                value={newTag.color}
+                                onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
+                                className="w-12 h-10 p-1 border rounded"
+                              />
+                              <Input
+                                value={newTag.color}
+                                onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
+                                placeholder="#8B5CF6"
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="tag-active"
+                              checked={newTag.isActive}
+                              onCheckedChange={(checked) => setNewTag({ ...newTag, isActive: checked })}
+                            />
+                            <Label htmlFor="tag-active" className="text-sm">
+                              Tag activo
+                            </Label>
+                          </div>
+                          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+                            <Button type="button" variant="outline" onClick={resetTagForm} className="w-full sm:w-auto">
+                              Cancelar
+                            </Button>
+                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                              {editingTag ? "Actualizar" : "Crear"} Tag
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {tags.map((tag) => (
+                      <div key={tag.id} className="border rounded-lg p-3 sm:p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: tag.color }}
+                            />
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <h3 className="font-semibold text-sm sm:text-base">#{tag.name}</h3>
+                                <Badge variant={tag.isActive ? "default" : "secondary"} className="text-xs">
+                                  {tag.isActive ? "Activo" : "Inactivo"}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-gray-500">{tag.color}</p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-1">
+                            <Button variant="outline" size="sm" onClick={() => handleEditTag(tag)}>
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteTag(tag.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {tags.length === 0 && (
+                      <div className="text-center py-6 sm:py-8">
+                        <Hash className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                        <p className="text-gray-500 text-sm sm:text-base font-medium">No hay tags creados</p>
+                        <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
+                          Crea tu primer tag para etiquetar productos
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="discounts" className="space-y-4 sm:space-y-6">
+            {/* Stats Cards for Discounts */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Descuentos</CardTitle>
+                  <Percent className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{discounts.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {discounts.filter((d) => d.isActive).length} activos • {discounts.filter((d) => !d.isActive).length}{" "}
+                    inactivos
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Descuentos Genéricos</CardTitle>
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{discounts.filter((d) => d.isGeneric).length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Aplicables a cualquier producto</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Descuentos Específicos</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{discounts.filter((d) => !d.isGeneric).length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Para productos específicos</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Productos con Descuento</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold">{products.filter((p) => p.discountId).length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Productos con descuento aplicado</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Discounts Management */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Truck className="w-5 h-5 mr-2" />
-                  Configuración de Envíos
-                </CardTitle>
-                <CardDescription>Controla la disponibilidad y configuración de envíos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="shippingEnabled">Envíos Habilitados</Label>
-                    <p className="text-sm text-gray-600">
-                      Cuando está deshabilitado, los clientes no podrán seleccionar dirección de envío
-                    </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">Gestión de Descuentos</CardTitle>
+                    <CardDescription className="text-sm">
+                      Administra los descuentos y promociones de tu tienda
+                    </CardDescription>
                   </div>
-                  <Switch
-                    id="shippingEnabled"
-                    checked={settings.shippingEnabled}
-                    onCheckedChange={(checked) => updateSettings({ shippingEnabled: checked })}
-                  />
-                </div>
+                  <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo Descuento
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
+                      <DialogHeader>
+                        <DialogTitle className="text-lg sm:text-xl">
+                          {editingDiscount ? "Editar Descuento" : "Nuevo Descuento"}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm">
+                          {editingDiscount
+                            ? "Modifica los datos del descuento"
+                            : "Crea un nuevo descuento para tu tienda"}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
+                        <form onSubmit={handleSubmitDiscount} className="space-y-4 sm:space-y-6">
+                          {/* Información Básica */}
+                          <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">Información Básica</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div>
+                                <Label htmlFor="discount-name" className="text-sm">
+                                  Nombre del Descuento *
+                                </Label>
+                                <Input
+                                  id="discount-name"
+                                  value={newDiscount.name}
+                                  onChange={(e) => setNewDiscount({ ...newDiscount, name: e.target.value })}
+                                  required
+                                  placeholder="Ej: Descuento Primavera"
+                                  className="text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="discount-reason" className="text-sm">
+                                  Razón del Descuento *
+                                </Label>
+                                <Input
+                                  id="discount-reason"
+                                  value={newDiscount.reason}
+                                  onChange={(e) => setNewDiscount({ ...newDiscount, reason: e.target.value })}
+                                  required
+                                  placeholder="Ej: Promoción de temporada"
+                                  className="text-sm"
+                                />
+                              </div>
+                            </div>
 
-                {!settings.shippingEnabled && (
-                  <div className="space-y-2">
-                    <Label htmlFor="shippingMessage">Mensaje para Clientes</Label>
+                            <div>
+                              <Label htmlFor="discount-description" className="text-sm">
+                                Descripción
+                              </Label>
+                              <Textarea
+                                id="discount-description"
+                                value={newDiscount.description}
+                                onChange={(e) => setNewDiscount({ ...newDiscount, description: e.target.value })}
+                                rows={3}
+                                placeholder="Descripción detallada del descuento..."
+                                className="text-sm"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div>
+                                <Label htmlFor="discount-type" className="text-sm">
+                                  Tipo de Descuento *
+                                </Label>
+                                <Select
+                                  value={newDiscount.type}
+                                  onValueChange={(value) => setNewDiscount({ ...newDiscount, type: value })}
+                                >
+                                  <SelectTrigger className="text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="percentage">Porcentaje (%)</SelectItem>
+                                    <SelectItem value="fixed">Cantidad Fija ($)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="discount-value" className="text-sm">
+                                  Valor del Descuento * {newDiscount.type === "percentage" ? "(%)" : "($)"}
+                                </Label>
+                                <Input
+                                  id="discount-value"
+                                  type="number"
+                                  step={newDiscount.type === "percentage" ? "1" : "0.01"}
+                                  value={newDiscount.value}
+                                  onChange={(e) => setNewDiscount({ ...newDiscount, value: e.target.value })}
+                                  required
+                                  placeholder={newDiscount.type === "percentage" ? "15" : "10.00"}
+                                  className="text-sm"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="isGeneric"
+                                  checked={newDiscount.isGeneric}
+                                  onCheckedChange={(checked) => setNewDiscount({ ...newDiscount, isGeneric: checked })}
+                                />
+                                <Label htmlFor="isGeneric" className="text-sm">
+                                  Descuento genérico (aplicable a cualquier producto)
+                                </Label>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="isActive"
+                                  checked={newDiscount.isActive}
+                                  onCheckedChange={(checked) => setNewDiscount({ ...newDiscount, isActive: checked })}
+                                />
+                                <Label htmlFor="isActive" className="text-sm">
+                                  Descuento activo
+                                </Label>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Fechas de Vigencia */}
+                          {!newDiscount.isGeneric && (
+                            <div className="space-y-3 sm:space-y-4">
+                              <h3 className="text-base sm:text-lg font-medium">Fechas de Vigencia</h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                  <Label htmlFor="startDate" className="text-sm">
+                                    Fecha de Inicio
+                                  </Label>
+                                  <Input
+                                    id="startDate"
+                                    type="date"
+                                    value={newDiscount.startDate}
+                                    onChange={(e) => setNewDiscount({ ...newDiscount, startDate: e.target.value })}
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="endDate" className="text-sm">
+                                    Fecha de Fin
+                                  </Label>
+                                  <Input
+                                    id="endDate"
+                                    type="date"
+                                    value={newDiscount.endDate}
+                                    onChange={(e) => setNewDiscount({ ...newDiscount, endDate: e.target.value })}
+                                    className="text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Productos Aplicables */}
+                          {!newDiscount.isGeneric && (
+                            <div className="space-y-3 sm:space-y-4">
+                              <h3 className="text-base sm:text-lg font-medium">Productos Aplicables</h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-60 overflow-y-auto border rounded-lg p-3 sm:p-4">
+                                {products.map((product) => (
+                                  <div key={product.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`product-${product.id}`}
+                                      checked={newDiscount.productIds.includes(product.id)}
+                                      onCheckedChange={() => handleProductToggleForDiscount(product.id)}
+                                    />
+                                    <Label htmlFor={`product-${product.id}`} className="text-xs sm:text-sm">
+                                      {product.name} - ${product.price.toFixed(2)}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="text-xs sm:text-sm text-gray-600">
+                                Seleccionados: {newDiscount.productIds.length} producto(s)
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetDiscountForm}
+                              className="w-full sm:w-auto"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                              {editingDiscount ? "Actualizar" : "Crear"} Descuento
+                            </Button>
+                          </div>
+                        </form>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 sm:space-y-4">
+                  {discounts.map((discount) => (
+                    <div key={discount.id} className="border rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-sm sm:text-base">{discount.name}</h3>
+                            <Badge variant={discount.isActive ? "default" : "secondary"} className="text-xs">
+                              {discount.isActive ? "Activo" : "Inactivo"}
+                            </Badge>
+                            {discount.isGeneric && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">
+                                Genérico
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-600 mb-1">{discount.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            <strong>Razón:</strong> {discount.reason}
+                          </p>
+                          {!discount.isGeneric && discount.startDate && discount.endDate && (
+                            <p className="text-xs sm:text-sm text-gray-500">
+                              <strong>Vigencia:</strong> {discount.startDate} - {discount.endDate}
+                            </p>
+                          )}
+                          {!discount.isGeneric && (
+                            <p className="text-xs sm:text-sm text-gray-500">
+                              <strong>Productos:</strong> {discount.productIds.length} producto(s)
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <div className="text-xl sm:text-2xl font-bold text-green-600">
+                            {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value.toFixed(2)}`}
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            {discount.type === "percentage" ? "Descuento" : "Descuento fijo"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditDiscount(discount)}
+                          className="w-full sm:w-auto"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteDiscount(discount.id)}
+                          className="text-red-600 hover:text-red-700 w-full sm:w-auto"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {discounts.length === 0 && (
+                    <div className="text-center py-6 sm:py-8">
+                      <Percent className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                      <p className="text-gray-500 text-sm sm:text-base font-medium">No hay descuentos creados</p>
+                      <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
+                        Crea tu primer descuento para empezar a ofrecer promociones
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4 sm:space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">Configuración de la Tienda</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 sm:space-y-6">
+                {/* Configuración de Envíos */}
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-medium">Envíos</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                    <div>
+                      <Label htmlFor="shipping" className="text-sm">
+                        Envíos Habilitados
+                      </Label>
+                      <p className="text-xs sm:text-sm text-gray-600">Permitir envíos a domicilio</p>
+                    </div>
+                    <Switch id="shipping" />
+                  </div>
+                  <div>
+                    <Label htmlFor="shipping-message" className="text-sm">
+                      Mensaje cuando los envíos están deshabilitados
+                    </Label>
                     <Textarea
-                      id="shippingMessage"
-                      value={settings.shippingMessage || ""}
-                      onChange={(e) => updateSettings({ shippingMessage: e.target.value })}
-                      placeholder="Mensaje que verán los clientes cuando los envíos estén deshabilitados"
-                      rows={3}
+                      id="shipping-message"
+                      placeholder="Los envíos están temporalmente suspendidos..."
+                      rows={2}
+                      className="text-sm"
                     />
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
-                  Configuración General
-                </CardTitle>
-                <CardDescription>Ajustes generales de la tienda</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Moneda</Label>
-                    <Select defaultValue="USD">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="MXN">MXN ($)</SelectItem>
-                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <Separator />
+
+                {/* Configuración de Pagos */}
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-medium">Pagos</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                    <div>
+                      <Label htmlFor="payment" className="text-sm">
+                        Pagos en Línea Habilitados
+                      </Label>
+                      <p className="text-xs sm:text-sm text-gray-600">Permitir pagos con tarjeta en línea</p>
+                    </div>
+                    <Switch id="payment" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taxRate">Tasa de Impuestos (%)</Label>
-                    <Input id="taxRate" type="number" step="0.01" defaultValue="16" placeholder="16.00" />
+                  <div>
+                    <Label htmlFor="payment-message" className="text-sm">
+                      Mensaje cuando los pagos están deshabilitados
+                    </Label>
+                    <Textarea
+                      id="payment-message"
+                      placeholder="Los pagos en línea están temporalmente deshabilitados..."
+                      rows={2}
+                      className="text-sm"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="freeShippingThreshold">Envío Gratis a partir de</Label>
-                  <Input id="freeShippingThreshold" type="number" step="0.01" defaultValue="50" placeholder="50.00" />
+                <Separator />
+
+                {/* Configuración de Impuestos */}
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-medium">Impuestos</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                    <div>
+                      <Label htmlFor="tax" className="text-sm">
+                        Impuestos Habilitados
+                      </Label>
+                      <p className="text-xs sm:text-sm text-gray-600">Aplicar impuestos a las compras</p>
+                    </div>
+                    <Switch id="tax" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <Label htmlFor="tax-name" className="text-sm">
+                        Nombre del Impuesto
+                      </Label>
+                      <Input id="tax-name" placeholder="IVA" className="text-sm" />
+                    </div>
+                    <div>
+                      <Label htmlFor="tax-rate" className="text-sm">
+                        Tasa de Impuesto (%)
+                      </Label>
+                      <Input id="tax-rate" type="number" step="0.01" placeholder="16" className="text-sm" />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="storeEmail">Email de la Tienda</Label>
-                  <Input
-                    id="storeEmail"
-                    type="email"
-                    defaultValue="info@bisuteria.com"
-                    placeholder="info@bisuteria.com"
-                  />
+                <Separator />
+
+                {/* Configuración General */}
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-medium">General</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                    <div>
+                      <Label htmlFor="notifications" className="text-sm">
+                        Notificaciones por Email
+                      </Label>
+                      <p className="text-xs sm:text-sm text-gray-600">Recibir notificaciones de nuevos pedidos</p>
+                    </div>
+                    <Switch id="notifications" />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="storePhone">Teléfono de la Tienda</Label>
-                  <Input id="storePhone" type="tel" defaultValue="+1 (555) 123-4567" placeholder="+1 (555) 123-4567" />
-                </div>
-
-                <Button className="bg-rose-600 hover:bg-rose-700">Guardar Configuración</Button>
+                <Button className="w-full sm:w-auto">
+                  <Save className="h-4 w-4 mr-2" />
+                  Guardar Configuración
+                </Button>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

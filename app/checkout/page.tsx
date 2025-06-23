@@ -17,7 +17,7 @@ import { useOrders } from "@/contexts/orders-context"
 import { useSettings } from "@/contexts/settings-context"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import { CreditCard, Lock, ArrowLeft, AlertTriangle, Truck } from "lucide-react"
+import { CreditCard, Lock, ArrowLeft, AlertTriangle, Truck, DollarSign, Info } from "lucide-react"
 import Link from "next/link"
 
 export default function CheckoutPage() {
@@ -56,6 +56,11 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  // Calcular totales con impuestos configurables
+  const subtotal = total
+  const taxAmount = settings.taxEnabled ? subtotal * (settings.taxRate / 100) : 0
+  const finalTotal = subtotal + taxAmount
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) {
@@ -70,8 +75,10 @@ export default function CheckoutPage() {
     setIsProcessing(true)
 
     try {
-      // Simular procesamiento de pago
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Simular procesamiento de pago solo si está habilitado
+      if (settings.paymentEnabled) {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
 
       // Crear el pedido
       const orderData = {
@@ -95,7 +102,10 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           image: item.image,
         })),
-        totalAmount: total * 1.16, // Incluir impuestos
+        subtotal: subtotal,
+        taxAmount: taxAmount,
+        totalAmount: finalTotal,
+        paymentMethod: settings.paymentEnabled ? "online" : "offline",
         notes: formData.notes,
       }
 
@@ -157,6 +167,16 @@ export default function CheckoutPage() {
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <strong>Envíos temporalmente suspendidos:</strong> {settings.shippingMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Alerta de pagos deshabilitados */}
+        {!settings.paymentEnabled && (
+          <Alert className="mb-6 border-blue-200 bg-blue-50">
+            <DollarSign className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>Pagos en línea deshabilitados:</strong> {settings.paymentMessage}
             </AlertDescription>
           </Alert>
         )}
@@ -301,62 +321,64 @@ export default function CheckoutPage() {
                 </Card>
               )}
 
-              {/* Información de Pago */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Información de Pago
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="cardName">Nombre en la Tarjeta *</Label>
-                    <Input
-                      id="cardName"
-                      required
-                      value={formData.cardName}
-                      onChange={(e) => handleInputChange("cardName", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cardNumber">Número de Tarjeta *</Label>
-                    <Input
-                      id="cardNumber"
-                      placeholder="1234 5678 9012 3456"
-                      required
-                      value={formData.cardNumber}
-                      onChange={(e) => handleInputChange("cardNumber", e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+              {/* Información de Pago - Solo si los pagos están habilitados */}
+              {settings.paymentEnabled && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <CreditCard className="w-5 h-5 mr-2" />
+                      Información de Pago
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="expiryDate">Fecha de Vencimiento *</Label>
+                      <Label htmlFor="cardName">Nombre en la Tarjeta *</Label>
                       <Input
-                        id="expiryDate"
-                        placeholder="MM/AA"
+                        id="cardName"
                         required
-                        value={formData.expiryDate}
-                        onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+                        value={formData.cardName}
+                        onChange={(e) => handleInputChange("cardName", e.target.value)}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="cvv">CVV *</Label>
+                      <Label htmlFor="cardNumber">Número de Tarjeta *</Label>
                       <Input
-                        id="cvv"
-                        placeholder="123"
+                        id="cardNumber"
+                        placeholder="1234 5678 9012 3456"
                         required
-                        value={formData.cvv}
-                        onChange={(e) => handleInputChange("cvv", e.target.value)}
+                        value={formData.cardNumber}
+                        onChange={(e) => handleInputChange("cardNumber", e.target.value)}
                       />
                     </div>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Lock className="w-4 h-4 mr-2" />
-                    Tu información está segura y encriptada
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="expiryDate">Fecha de Vencimiento *</Label>
+                        <Input
+                          id="expiryDate"
+                          placeholder="MM/AA"
+                          required
+                          value={formData.expiryDate}
+                          onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cvv">CVV *</Label>
+                        <Input
+                          id="cvv"
+                          placeholder="123"
+                          required
+                          value={formData.cvv}
+                          onChange={(e) => handleInputChange("cvv", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Tu información está segura y encriptada
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Notas Adicionales */}
               <Card>
@@ -403,24 +425,44 @@ export default function CheckoutPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Envío</span>
                       <span>{settings.shippingEnabled ? "Gratis" : "N/A"}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Impuestos</span>
-                      <span>${(total * 0.16).toFixed(2)}</span>
-                    </div>
+                    {settings.taxEnabled && (
+                      <div className="flex justify-between">
+                        <span>
+                          {settings.taxName} ({settings.taxRate}%)
+                        </span>
+                        <span>${taxAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {!settings.taxEnabled && (
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Impuestos</span>
+                        <span>No aplicables</span>
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
 
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-rose-600">${(total * 1.16).toFixed(2)}</span>
+                    <span className="text-rose-600">${finalTotal.toFixed(2)}</span>
                   </div>
+
+                  {/* Información adicional sobre impuestos */}
+                  {settings.taxEnabled && (
+                    <div className="flex items-start space-x-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                      <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        El {settings.taxName} del {settings.taxRate}% está incluido en el total final.
+                      </span>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
@@ -428,7 +470,11 @@ export default function CheckoutPage() {
                     size="lg"
                     disabled={isProcessing || missingUserData || missingAddressData}
                   >
-                    {isProcessing ? "Procesando..." : "Confirmar Pedido"}
+                    {isProcessing
+                      ? "Procesando..."
+                      : settings.paymentEnabled
+                        ? "Confirmar y Pagar"
+                        : "Confirmar Pedido"}
                   </Button>
 
                   <p className="text-xs text-gray-500 text-center">

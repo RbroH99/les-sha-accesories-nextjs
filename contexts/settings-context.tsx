@@ -5,6 +5,11 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 interface AppSettings {
   shippingEnabled: boolean
   shippingMessage?: string
+  paymentEnabled: boolean
+  paymentMessage?: string
+  taxEnabled: boolean
+  taxRate: number
+  taxName: string
 }
 
 interface SettingsContextType {
@@ -20,6 +25,12 @@ const defaultSettings: AppSettings = {
   shippingEnabled: true,
   shippingMessage:
     "Los envíos están temporalmente suspendidos. Nos pondremos en contacto contigo para coordinar la entrega.",
+  paymentEnabled: true,
+  paymentMessage:
+    "Los pagos en línea están temporalmente deshabilitados. Nos pondremos en contacto contigo para coordinar el pago.",
+  taxEnabled: true,
+  taxRate: 16,
+  taxName: "IVA",
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {

@@ -8,10 +8,27 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Heart, ShoppingBag, Star, Minus, Plus, Share2, Truck, Shield, RotateCcw } from "lucide-react"
+import {
+  ArrowLeft,
+  Heart,
+  ShoppingBag,
+  Star,
+  Minus,
+  Plus,
+  Share2,
+  Truck,
+  Shield,
+  RotateCcw,
+  Package,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Calendar,
+} from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import { useFavorites } from "@/contexts/favorites-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useSettings } from "@/contexts/settings-context"
 import { useToast } from "@/hooks/use-toast"
 import { getProductById, getRelatedProducts, type ProductDetail } from "@/lib/products-data"
 
@@ -22,6 +39,7 @@ export default function ProductDetailPage() {
   const { addItem } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
   const { user } = useAuth()
+  const { settings } = useSettings()
 
   const [product, setProduct] = useState<ProductDetail | null>(null)
   const [relatedProducts, setRelatedProducts] = useState<ProductDetail[]>([])
@@ -52,12 +70,22 @@ export default function ProductDetailPage() {
 
     if (!product) return
 
+    // Verificar disponibilidad
+    if (product.availabilityType === "stock_only" && product.stock < quantity) {
+      toast({
+        title: "Stock insuficiente",
+        description: `Solo hay ${product.stock} unidades disponibles`,
+        variant: "destructive",
+      })
+      return
+    }
+
     for (let i = 0; i < quantity; i++) {
       addItem({
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.images[0],
+        image: product.images[0] || "/placeholder.svg?height=300&width=300",
         category: product.category,
       })
     }
@@ -84,7 +112,7 @@ export default function ProductDetailPage() {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images[0],
+      image: product.images[0] || "/placeholder.svg?height=300&width=300",
       category: product.category,
     })
 
@@ -92,6 +120,74 @@ export default function ProductDetailPage() {
       title: isFavorite(product.id) ? "Eliminado de favoritos" : "Agregado a favoritos",
       description: `${product.name} ${isFavorite(product.id) ? "se eliminó de" : "se agregó a"} tus favoritos`,
     })
+  }
+
+  const getAvailabilityIcon = (type: string) => {
+    switch (type) {
+      case "stock_only":
+        return <Package className="w-5 h-5 text-blue-600" />
+      case "stock_and_order":
+        return <CheckCircle className="w-5 h-5 text-green-600" />
+      case "order_only":
+        return <Clock className="w-5 h-5 text-orange-600" />
+      default:
+        return <AlertCircle className="w-5 h-5 text-gray-600" />
+    }
+  }
+
+  const getAvailabilityText = (type: string) => {
+    switch (type) {
+      case "stock_only":
+        return "Solo disponible en stock"
+      case "stock_and_order":
+        return "Disponible en stock y por pedido"
+      case "order_only":
+        return "Solo disponible por pedido"
+      default:
+        return "Disponibilidad desconocida"
+    }
+  }
+
+  const getAvailabilityDescription = (type: string, stock: number) => {
+    switch (type) {
+      case "stock_only":
+        return stock > 0
+          ? `Tenemos ${stock} unidades en stock. Una vez agotado, no estará disponible hasta reposición.`
+          : "Producto agotado. No disponible hasta reposición."
+      case "stock_and_order":
+        return stock > 0
+          ? `Tenemos ${stock} unidades en stock. Si se agota, puedes hacer un pedido y lo fabricaremos especialmente para ti.`
+          : "Sin stock actual, pero puedes hacer un pedido y lo fabricaremos especialmente para ti."
+      case "order_only":
+        return "Este producto se fabrica únicamente por encargo. Cada pieza es única y hecha especialmente para ti."
+      default:
+        return ""
+    }
+  }
+
+  const canAddToCart = (type: string, stock: number) => {
+    switch (type) {
+      case "stock_only":
+        return stock > 0
+      case "stock_and_order":
+      case "order_only":
+        return true
+      default:
+        return false
+    }
+  }
+
+  const getButtonText = (type: string, stock: number) => {
+    switch (type) {
+      case "stock_only":
+        return stock > 0 ? "Agregar al Carrito" : "Agotado"
+      case "stock_and_order":
+        return stock > 0 ? "Agregar al Carrito" : "Hacer Pedido"
+      case "order_only":
+        return "Hacer Pedido"
+      default:
+        return "No Disponible"
+    }
   }
 
   if (loading) {
@@ -147,34 +243,46 @@ export default function ProductDetailPage() {
           {/* Galería de Imágenes */}
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-lg overflow-hidden shadow-lg">
-              <Image
-                src={product.images[selectedImage] || "/placeholder.svg"}
-                alt={product.name}
-                fill
-                className="object-cover"
-              />
+              {product.images.length > 0 ? (
+                <Image
+                  src={product.images[selectedImage] || "/placeholder.svg"}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <div className="text-center">
+                    <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 font-medium">Sin imagen disponible</p>
+                    <p className="text-sm text-gray-400">Producto personalizado</p>
+                  </div>
+                </div>
+              )}
               {product.isNew && <Badge className="absolute top-4 left-4 bg-amber-500 hover:bg-amber-600">Nuevo</Badge>}
             </div>
 
             {/* Thumbnails */}
-            <div className="grid grid-cols-4 gap-2">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`relative aspect-square bg-white rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === index ? "border-rose-600" : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <Image
-                    src={image || "/placeholder.svg"}
-                    alt={`${product.name} ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            {product.images.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`relative aspect-square bg-white rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImage === index ? "border-rose-600" : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Image
+                      src={image || "/placeholder.svg"}
+                      alt={`${product.name} ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Información del Producto */}
@@ -204,41 +312,67 @@ export default function ProductDetailPage() {
               <div className="text-3xl font-bold text-rose-600 mb-6">${product.price.toFixed(2)}</div>
             </div>
 
+            {/* Información de Disponibilidad */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-start space-x-3">
+                {getAvailabilityIcon(product.availabilityType)}
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{getAvailabilityText(product.availabilityType)}</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {getAvailabilityDescription(product.availabilityType, product.stock)}
+                  </p>
+                  {product.availabilityType !== "stock_only" && (
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm text-blue-600 font-medium">
+                        Tiempo de fabricación: {product.estimatedDeliveryDays} días
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Cantidad y Acciones */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-700">Cantidad:</span>
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="h-10 w-10"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="px-4 py-2 text-center min-w-[3rem]">{quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    className="h-10 w-10"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+              {product.availabilityType !== "order_only" && product.stock > 0 && (
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm font-medium text-gray-700">Cantidad:</span>
+                  <div className="flex items-center border border-gray-300 rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="h-10 w-10"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-4 py-2 text-center min-w-[3rem]">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      className="h-10 w-10"
+                      disabled={product.availabilityType === "stock_only" && quantity >= product.stock}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {product.availabilityType === "stock_only" && (
+                    <span className="text-sm text-gray-600">{product.stock} disponibles</span>
+                  )}
                 </div>
-                <span className="text-sm text-gray-600">{product.stock} disponibles</span>
-              </div>
+              )}
 
               <div className="flex space-x-4">
                 <Button
                   onClick={handleAddToCart}
                   className="flex-1 bg-rose-600 hover:bg-rose-700"
                   size="lg"
-                  disabled={product.stock === 0}
+                  disabled={!canAddToCart(product.availabilityType, product.stock)}
                 >
                   <ShoppingBag className="w-4 h-4 mr-2" />
-                  {product.stock === 0 ? "Agotado" : "Agregar al Carrito"}
+                  {getButtonText(product.availabilityType, product.stock)}
                 </Button>
 
                 <Button variant="outline" size="lg" onClick={handleToggleFavorite} className="px-4">
@@ -251,21 +385,38 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Información de Envío */}
+            {/* Información de Políticas */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center space-x-3">
-                <Truck className="w-5 h-5 text-green-600" />
-                <span className="text-sm">Envío gratuito en pedidos superiores a $50</span>
-              </div>
+              {settings.shippingEnabled && (
+                <div className="flex items-center space-x-3">
+                  <Truck className="w-5 h-5 text-green-600" />
+                  <span className="text-sm">Envío gratuito en pedidos superiores a $50</span>
+                </div>
+              )}
+              {product.returnPeriodDays > 0 && (
+                <div className="flex items-center space-x-3">
+                  <RotateCcw className="w-5 h-5 text-purple-600" />
+                  <span className="text-sm">Devoluciones dentro de {product.returnPeriodDays} días</span>
+                </div>
+              )}
               <div className="flex items-center space-x-3">
                 <Shield className="w-5 h-5 text-blue-600" />
                 <span className="text-sm">Garantía de 6 meses</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <RotateCcw className="w-5 h-5 text-purple-600" />
-                <span className="text-sm">Devoluciones dentro de 30 días</span>
-              </div>
             </div>
+
+            {/* Mensaje de envíos deshabilitados */}
+            {!settings.shippingEnabled && settings.shippingMessage && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-amber-800">Información de Envíos</h4>
+                    <p className="text-sm text-amber-700 mt-1">{settings.shippingMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -303,6 +454,26 @@ export default function ProductDetailPage() {
                     <h4 className="font-semibold mb-2">Dimensiones:</h4>
                     <p className="text-gray-700">{product.dimensions}</p>
                   </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Disponibilidad:</h4>
+                    <div className="flex items-center space-x-2">
+                      {getAvailabilityIcon(product.availabilityType)}
+                      <span className="text-gray-700">{getAvailabilityText(product.availabilityType)}</span>
+                    </div>
+                    {product.availabilityType !== "stock_only" && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Tiempo de fabricación: {product.estimatedDeliveryDays} días
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Política de Devoluciones:</h4>
+                    <p className="text-gray-700">
+                      {product.returnPeriodDays > 0
+                        ? `Puedes devolver este producto dentro de ${product.returnPeriodDays} días desde la compra.`
+                        : "Este producto no acepta devoluciones debido a su naturaleza personalizada."}
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -336,6 +507,9 @@ export default function ProductDetailPage() {
                       <p className="text-gray-700">{review.comment}</p>
                     </div>
                   ))}
+                  {product.reviews.length === 0 && (
+                    <p className="text-gray-500 text-center py-8">Aún no hay reseñas para este producto.</p>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -358,13 +532,19 @@ export default function ProductDetailPage() {
                       {relatedProduct.isNew && (
                         <Badge className="absolute top-3 left-3 z-10 bg-amber-500 hover:bg-amber-600">Nuevo</Badge>
                       )}
-                      <Image
-                        src={relatedProduct.images[0] || "/placeholder.svg"}
-                        alt={relatedProduct.name}
-                        width={300}
-                        height={300}
-                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      {relatedProduct.images.length > 0 ? (
+                        <Image
+                          src={relatedProduct.images[0] || "/placeholder.svg"}
+                          alt={relatedProduct.name}
+                          width={300}
+                          height={300}
+                          className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-64 bg-gray-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                          <Package className="w-12 h-12 text-gray-400" />
+                        </div>
+                      )}
                     </div>
                     <div className="p-4 space-y-3">
                       <div className="flex items-center justify-between">

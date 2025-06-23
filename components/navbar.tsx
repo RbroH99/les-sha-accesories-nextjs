@@ -1,21 +1,31 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Menu, ShoppingBag, Heart, User, Search, LogOut, Settings, UserCircle } from "lucide-react"
-import { useCart } from "@/contexts/cart-context"
-import { useAuth } from "@/contexts/auth-context"
-import { useFavorites } from "@/contexts/favorites-context"
+} from "@/components/ui/dropdown-menu";
+import {
+  Menu,
+  ShoppingBag,
+  Heart,
+  User,
+  Search,
+  LogOut,
+  Settings,
+  UserCircle,
+} from "lucide-react";
+import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useFavorites } from "@/contexts/favorites-context";
+import Image from "next/image";
 
 const navigation = [
   { name: "Inicio", href: "/" },
@@ -25,18 +35,18 @@ const navigation = [
   { name: "Pulseras", href: "/tienda?categoria=pulseras" },
   { name: "Sobre Mí", href: "/sobre-mi" },
   { name: "Contacto", href: "/contacto" },
-]
+];
 
 export function Navbar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const { items } = useCart()
-  const { favorites } = useFavorites()
-  const { user, logout } = useAuth()
-  const itemCount = items.reduce((total, item) => total + item.quantity, 0)
+  const [isOpen, setIsOpen] = useState(false);
+  const { items } = useCart();
+  const { favorites } = useFavorites();
+  const { user, logout } = useAuth();
+  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   const handleLogout = () => {
-    logout()
-  }
+    logout();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -44,10 +54,19 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-amber-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">B</span>
+            <div className="rounded-full overflow-hidden w-12 h-12 md:w-16 md:h-16 flex-shrink-0 border-2 border-white relative">
+              <Image
+                src="/Lesha.jpg"
+                alt="LesSha Logo"
+                fill // Ocupa todo el espacio del contenedor padre
+                className="object-cover"
+                sizes="(max-width: 768px) 48px, 64px" // Optimización para dispositivos
+                priority // Opcional: si es el logo principal
+              />
             </div>
-            <span className="font-bold text-xl text-gray-900 font-playfair">Bisutería Artesanal</span>
+            <span className="font-bold text-xl text-gray-900 font-playfair">
+              LesSha
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -103,7 +122,7 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-sm font-medium">{user.username}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
@@ -123,7 +142,10 @@ export function Navbar() {
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href="/admin/dashboard" className="cursor-pointer">
+                        <Link
+                          href="/admin/dashboard"
+                          className="cursor-pointer"
+                        >
                           <Settings className="mr-2 h-4 w-4" />
                           Panel de Admin
                         </Link>
@@ -131,7 +153,10 @@ export function Navbar() {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     Cerrar Sesión
                   </DropdownMenuItem>
@@ -199,5 +224,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  )
+  );
 }

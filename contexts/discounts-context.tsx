@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 
 export interface Discount {
   id: string
@@ -78,52 +78,55 @@ export function DiscountsProvider({ children }: { children: ReactNode }) {
     return discounts.find((discount) => discount.id === id)
   }
 
-  const getActiveDiscountsForProduct = (productId: number): Discount[] => {
-    const now = new Date()
-    return discounts.filter(
-      (discount) =>
-        discount.isActive &&
-        discount.productIds.includes(productId) &&
-        (discount.isGeneric ||
-          ((!discount.startDate || new Date(discount.startDate) <= now) &&
-            (!discount.endDate || new Date(discount.endDate) >= now))),
-    )
-  }
+  const getActiveDiscountsForProduct = useCallback(
+    (productId: number): Discount[] => {
+      const now = new Date()
+      return discounts.filter(
+        (discount) =>
+          discount.isActive &&
+          discount.productIds.includes(productId) &&
+          (discount.isGeneric ||
+            ((!discount.startDate || new Date(discount.startDate) <= now) &&
+              (!discount.endDate || new Date(discount.endDate) >= now))),
+      )
+    },
+    [discounts],
+  )
 
-  const calculateDiscountedPrice = (
-    originalPrice: number,
-    productId: number,
-  ): { price: number; discount?: Discount } => {
-    const activeDiscounts = getActiveDiscountsForProduct(productId)
+  const calculateDiscountedPrice = useCallback(
+    (originalPrice: number, productId: number): { price: number; discount?: Discount } => {
+      const activeDiscounts = getActiveDiscountsForProduct(productId)
 
-    if (activeDiscounts.length === 0) {
-      return { price: originalPrice }
-    }
-
-    // Aplicar el mejor descuento (el que da mayor reducción)
-    let bestDiscount = activeDiscounts[0]
-    let bestPrice = originalPrice
-
-    for (const discount of activeDiscounts) {
-      let discountedPrice = originalPrice
-
-      if (discount.type === "percentage") {
-        discountedPrice = originalPrice * (1 - discount.value / 100)
-      } else {
-        discountedPrice = originalPrice - discount.value
+      if (activeDiscounts.length === 0) {
+        return { price: originalPrice }
       }
 
-      if (discountedPrice < bestPrice) {
-        bestPrice = discountedPrice
-        bestDiscount = discount
-      }
-    }
+      // Aplicar el mejor descuento (el que da mayor reducción)
+      let bestDiscount = activeDiscounts[0]
+      let bestPrice = originalPrice
 
-    return {
-      price: Math.max(0, bestPrice), // No permitir precios negativos
-      discount: bestDiscount,
-    }
-  }
+      for (const discount of activeDiscounts) {
+        let discountedPrice = originalPrice
+
+        if (discount.type === "percentage") {
+          discountedPrice = originalPrice * (1 - discount.value / 100)
+        } else {
+          discountedPrice = originalPrice - discount.value
+        }
+
+        if (discountedPrice < bestPrice) {
+          bestPrice = discountedPrice
+          bestDiscount = discount
+        }
+      }
+
+      return {
+        price: Math.max(0, bestPrice), // No permitir precios negativos
+        discount: bestDiscount,
+      }
+    },
+    [discounts],
+  )
 
   return (
     <DiscountsContext.Provider
