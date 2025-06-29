@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Lock, User, Mail } from "lucide-react"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
@@ -25,7 +25,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const success = await login(email, password)
+      const success = await login(identifier, password)
       if (success) {
         toast({
           title: "Inicio de sesión exitoso",
@@ -63,15 +63,15 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="identifier">Email o Nombre de Usuario</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  placeholder="tu@email.com o tu_usuario"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="pl-10"
                   required
                 />
@@ -106,15 +106,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-6 p-4 bg-amber-50 rounded-lg">
-            <p className="text-sm text-amber-800">
-              <strong>Credenciales de administrador:</strong>
-              <br />
-              Email: admin@bisuteria.com
-              <br />
-              Contraseña: admin123
-            </p>
-          </div>
+          
         </CardContent>
       </Card>
     </div>

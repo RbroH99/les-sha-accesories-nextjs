@@ -25,6 +25,7 @@ import {
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useFavorites } from "@/contexts/favorites-context";
+import { ThemeSelector } from "@/components/theme-selector";
 import Image from "next/image";
 
 const navigation = [
@@ -75,7 +76,7 @@ export function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-sm font-medium text-gray-700 hover:text-rose-600 transition-colors"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               >
                 {item.name}
               </Link>
@@ -87,6 +88,8 @@ export function Navbar() {
             <Button variant="ghost" size="icon" className="hidden sm:flex">
               <Search className="h-4 w-4" />
             </Button>
+
+            <ThemeSelector />
 
             {user && (
               <Link href="/favoritos">
@@ -183,7 +186,7 @@ export function Navbar() {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="text-lg font-medium text-gray-700 hover:text-rose-600 transition-colors"
+                      className="text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
                       {item.name}
@@ -194,14 +197,14 @@ export function Navbar() {
                       <hr className="my-4" />
                       <Link
                         href="/perfil"
-                        className="text-lg font-medium text-gray-700 hover:text-rose-600 transition-colors"
+                        className="text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
                         onClick={() => setIsOpen(false)}
                       >
                         Mi Perfil
                       </Link>
                       <Link
                         href="/favoritos"
-                        className="text-lg font-medium text-gray-700 hover:text-rose-600 transition-colors"
+                        className="text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
                         onClick={() => setIsOpen(false)}
                       >
                         Mis Favoritos
@@ -209,7 +212,7 @@ export function Navbar() {
                       {user.role === "admin" && (
                         <Link
                           href="/admin/dashboard"
-                          className="text-lg font-medium text-gray-700 hover:text-rose-600 transition-colors"
+                          className="text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
                           onClick={() => setIsOpen(false)}
                         >
                           Panel de Admin

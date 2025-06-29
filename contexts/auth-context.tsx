@@ -1,178 +1,190 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import Cookies from "js-cookie";
 
 interface Address {
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
 }
 
 interface User {
-  id: string
-  username: string
-  firstName?: string
-  lastName?: string
-  email: string
-  phone?: string
-  role: "user" | "admin"
-  defaultAddress?: Address
+  id: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  phone?: string;
+  role: "user" | "admin";
+  defaultAddress?: Address;
 }
 
 interface AuthContextType {
-  user: User | null
-  login: (email: string, password: string) => Promise<boolean>
-  register: (username: string, email: string, password: string) => Promise<boolean>
-  logout: () => void
+  user: User | null;
+  login: (identifier: string, password: string) => Promise<boolean>;
+  register: (
+    username: string,
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string,
+    phone?: string,
+  ) => Promise<boolean>;
+  logout: () => void;
   updateProfile: (updates: {
-    username?: string
-    firstName?: string
-    lastName?: string
-    phone?: string
-    defaultAddress?: Address
-  }) => Promise<boolean>
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    defaultAddress?: Address;
+  }) => Promise<boolean>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
-
-const USERS_STORAGE_KEY = "bisuteria_users"
-const CURRENT_USER_KEY = "bisuteria_current_user"
-
-// Usuario administrador por defecto
-const defaultAdmin: User = {
-  id: "admin-1",
-  username: "admin",
-  firstName: "Administrador",
-  lastName: "Principal",
-  email: "admin@bisuteria.com",
-  phone: "+52 123 456 7890",
-  role: "admin",
-  defaultAddress: {
-    address: "Calle Principal 123",
-    city: "Ciudad de México",
-    state: "CDMX",
-    zipCode: "01000",
-    country: "México",
-  },
-}
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Inicializar usuarios con admin por defecto
-    const existingUsers = localStorage.getItem(USERS_STORAGE_KEY)
-    if (!existingUsers) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify([defaultAdmin]))
-    }
-
-    // Verificar si hay un usuario logueado
-    const currentUserId = localStorage.getItem(CURRENT_USER_KEY)
-    if (currentUserId) {
-      const users: User[] = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || "[]")
-      const currentUser = users.find((u) => u.id === currentUserId)
-      if (currentUser) {
-        setUser(currentUser)
+    const token = Cookies.get("token");
+    if (token) {
+      // In a real app, you would verify the token on the server
+      // and fetch user data based on the token's payload.
+      // For this example, we'll decode it directly (less secure for production)
+      try {
+        const decodedToken: any = JSON.parse(atob(token.split('.')[1])); // Basic JWT decode
+        setUser({
+          id: decodedToken.userId,
+          username: decodedToken.username,
+          email: decodedToken.email,
+          role: decodedToken.role,
+        });
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        Cookies.remove("token");
       }
     }
-  }, [])
+  }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simular delay de red
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+  const login = async (identifier: string, password: string): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ identifier, password }),
+      });
 
-    const users: User[] = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || "[]")
-    const foundUser = users.find((u) => u.email === email)
+      const data = await response.json();
 
-    if (foundUser) {
-      // En una app real, verificarías la contraseña hasheada
-      // Por ahora, aceptamos cualquier contraseña para usuarios existentes
-      setUser(foundUser)
-      localStorage.setItem(CURRENT_USER_KEY, foundUser.id)
-      return true
+      if (response.ok) {
+        Cookies.set("token", data.token, { expires: 7 }); // Token expires in 7 days
+        setUser(data.user);
+        return true;
+      } else {
+        console.error("Login failed:", data.error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Network error during login:", error);
+      return false;
     }
+  };
 
-    return false
-  }
+  const register = async (
+    username: string,
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string,
+    phone?: string,
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, password, firstName, lastName, phone }),
+      });
 
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
-    // Simular delay de red
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+      const data = await response.json();
 
-    const users: User[] = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || "[]")
-
-    // Verificar si ya existe un usuario con ese email o username
-    const existingUser = users.find((u) => u.email === email || u.username === username)
-    if (existingUser) {
-      return false
+      if (response.ok) {
+        // After successful registration, attempt to log in the user
+        const loginSuccess = await login(username, password); // Use username for login after registration
+        return loginSuccess;
+      } else {
+        console.error("Registration failed:", data.error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Network error during registration:", error);
+      return false;
     }
-
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      username,
-      email,
-      role: "user",
-    }
-
-    users.push(newUser)
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
-    localStorage.setItem(CURRENT_USER_KEY, newUser.id)
-    setUser(newUser)
-
-    return true
-  }
+  };
 
   const updateProfile = async (updates: {
-    username?: string
-    firstName?: string
-    lastName?: string
-    phone?: string
-    defaultAddress?: Address
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    defaultAddress?: Address;
   }): Promise<boolean> => {
-    if (!user) return false
+    if (!user) return false;
 
-    // Simular delay de red
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const users: User[] = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || "[]")
-
-    // Si se está actualizando el username, verificar que no exista
-    if (updates.username && updates.username !== user.username) {
-      const existingUser = users.find((u) => u.username === updates.username && u.id !== user.id)
-      if (existingUser) {
-        return false
+    try {
+      const token = Cookies.get("token");
+      if (!token) {
+        console.error("No token found for profile update.");
+        return false;
       }
+
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update local user state with the data returned from the API
+        setUser((prevUser) => (prevUser ? { ...prevUser, ...data.user } : null));
+        return true;
+      } else {
+        console.error("Profile update failed:", data.error);
+        return false;
+      }
+    } catch (error) {
+      console.error("Network error during profile update:", error);
+      return false;
     }
-
-    const updatedUser = { ...user, ...updates }
-    const userIndex = users.findIndex((u) => u.id === user.id)
-
-    if (userIndex !== -1) {
-      users[userIndex] = updatedUser
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
-      setUser(updatedUser)
-      return true
-    }
-
-    return false
-  }
+  };
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem(CURRENT_USER_KEY)
-  }
+    Cookies.remove("token");
+    setUser(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>{children}</AuthContext.Provider>
-  )
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

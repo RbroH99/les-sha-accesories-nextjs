@@ -1,13 +1,13 @@
-"use client";
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Star, Heart, ShoppingBag, Sparkles } from "lucide-react";
-import { useFavorites } from "@/contexts/favorites-context";
-import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+"use client"
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Star, Heart, ShoppingBag, Sparkles } from "lucide-react"
+import { useFavorites } from "@/contexts/favorites-context"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 // Datos de ejemplo para productos destacados
 const featuredProducts = [
@@ -47,12 +47,12 @@ const featuredProducts = [
     rating: 5,
     isNew: false,
   },
-];
+]
 
 export default function HomePage() {
-  const { toggleFavorite, isFavorite } = useFavorites();
-  const { user } = useAuth();
-  const router = useRouter();
+  const { toggleFavorite, isFavorite } = useFavorites()
+  const { user } = useAuth()
+  const router = useRouter()
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -70,16 +70,12 @@ export default function HomePage() {
                   <span className="text-rose-600 block">Artesanal</span>
                 </h1>
                 <p className="text-lg text-gray-600 max-w-md">
-                  Descubre piezas únicas creadas especialmente para ti. Cada
-                  joya cuenta una historia y refleja tu personalidad única.
+                  Descubre piezas únicas creadas especialmente para ti. Cada joya cuenta una historia y refleja tu
+                  personalidad única.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-rose-600 hover:bg-rose-700"
-                >
+                <Button asChild size="lg" className="bg-rose-600 hover:bg-rose-700">
                   <Link href="/tienda">
                     <ShoppingBag className="w-4 h-4 mr-2" />
                     Explorar Tienda
@@ -111,13 +107,10 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Productos Destacados
-            </h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Productos Destacados</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Descubre nuestras piezas más populares, cada una creada con
-              técnicas artesanales tradicionales y materiales de la más alta
-              calidad.
+              Descubre nuestras piezas más populares, cada una creada con técnicas artesanales tradicionales y
+              materiales de la más alta calidad.
             </p>
           </div>
 
@@ -131,26 +124,18 @@ export default function HomePage() {
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     {product.isNew && (
-                      <Badge className="absolute top-3 left-3 z-10 bg-amber-500 hover:bg-amber-600">
-                        Nuevo
-                      </Badge>
+                      <Badge className="absolute top-3 left-3 z-10 bg-amber-500 hover:bg-amber-600">Nuevo</Badge>
                     )}
                     <Button
                       variant="ghost"
                       size="icon"
                       className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white"
                       onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(product.id);
+                        e.stopPropagation()
+                        toggleFavorite(product.id)
                       }}
                     >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          isFavorite(product.id)
-                            ? "fill-rose-500 text-rose-500"
-                            : ""
-                        }`}
-                      />
+                      <Heart className={`w-4 h-4 ${isFavorite(product.id) ? "fill-rose-500 text-rose-500" : ""}`} />
                     </Button>
                     <Image
                       src={product.image || "/placeholder.svg"}
@@ -170,9 +155,7 @@ export default function HomePage() {
                           <Star
                             key={i}
                             className={`w-3 h-3 ${
-                              i < product.rating
-                                ? "fill-amber-400 text-amber-400"
-                                : "text-gray-300"
+                              i < product.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"
                             }`}
                           />
                         ))}
@@ -182,14 +165,12 @@ export default function HomePage() {
                       {product.name}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-rose-600">
-                        ${product.price.toFixed(2)}
-                      </span>
+                      <span className="text-xl font-bold text-rose-600">${product.price.toFixed(2)}</span>
                       <Button
                         size="sm"
                         className="bg-rose-600 hover:bg-rose-700"
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation()
                           // código del botón
                         }}
                       >
@@ -216,19 +197,14 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-                Creado con Pasión y Dedicación
-              </h2>
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Creado con Pasión y Dedicación</h2>
               <p className="text-gray-600 leading-relaxed">
-                Cada pieza de nuestra colección es única y está hecha a mano con
-                amor. Utilizamos materiales naturales y técnicas tradicionales
-                para crear joyas que no solo son hermosas, sino que también
-                cuentan una historia.
+                Cada pieza de nuestra colección es única y está hecha a mano con amor. Utilizamos materiales naturales y
+                técnicas tradicionales para crear joyas que no solo son hermosas, sino que también cuentan una historia.
               </p>
               <p className="text-gray-600 leading-relaxed">
-                Desde collares elegantes hasta aretes delicados, cada creación
-                refleja nuestra pasión por el arte y nuestro compromiso con la
-                calidad artesanal.
+                Desde collares elegantes hasta aretes delicados, cada creación refleja nuestra pasión por el arte y
+                nuestro compromiso con la calidad artesanal.
               </p>
               <Button asChild className="bg-amber-600 hover:bg-amber-700">
                 <Link href="/sobre-mi">Conoce Más Sobre Mí</Link>
@@ -250,13 +226,10 @@ export default function HomePage() {
       {/* Contacto */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-            ¿Tienes alguna pregunta?
-          </h2>
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">¿Tienes alguna pregunta?</h2>
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Estamos aquí para ayudarte. Contáctanos para consultas sobre
-            productos personalizados, tiempos de entrega o cualquier otra
-            pregunta.
+            Estamos aquí para ayudarte. Contáctanos para consultas sobre productos personalizados, tiempos de entrega o
+            cualquier otra pregunta.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-rose-600 hover:bg-rose-700">
@@ -269,5 +242,5 @@ export default function HomePage() {
         </div>
       </section>
     </div>
-  );
+  )
 }

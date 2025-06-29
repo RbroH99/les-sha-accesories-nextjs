@@ -1,154 +1,343 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
+
+import { useToast } from "@/hooks/use-toast";
 
 export interface Category {
-  id: string
-  name: string
-  description?: string
-  isActive: boolean
-  createdAt: string
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Tag {
-  id: string
-  name: string
-  color: string
-  isActive: boolean
-  createdAt: string
+export interface ProductTag {
+  id: string;
+  name: string;
+  color: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface CategoriesContextType {
-  categories: Category[]
-  tags: Tag[]
-  createCategory: (data: Omit<Category, "id" | "createdAt">) => Promise<string>
-  updateCategory: (id: string, data: Partial<Category>) => Promise<boolean>
-  deleteCategory: (id: string) => Promise<boolean>
-  createTag: (data: Omit<Tag, "id" | "createdAt">) => Promise<string>
-  updateTag: (id: string, data: Partial<Tag>) => Promise<boolean>
-  deleteTag: (id: string) => Promise<boolean>
-  getCategoryById: (id: string) => Category | undefined
-  getTagById: (id: string) => Tag | undefined
+  categories: Category[];
+  tags: ProductTag[];
+  loadingCategories: boolean;
+  loadingTags: boolean;
+  fetchCategories: () => Promise<void>;
+  fetchTags: () => Promise<void>;
+  createCategory: (
+    data: Omit<Category, "id" | "createdAt" | "updatedAt">
+  ) => Promise<string | undefined>;
+  updateCategory: (
+    id: string,
+    data: Partial<Omit<Category, "createdAt" | "updatedAt">>
+  ) => Promise<boolean>;
+  deleteCategory: (id: string) => Promise<boolean>;
+  createTag: (
+    data: Omit<ProductTag, "id" | "createdAt" | "updatedAt">
+  ) => Promise<string | undefined>;
+  updateTag: (
+    id: string,
+    data: Partial<Omit<ProductTag, "createdAt" | "updatedAt">>
+  ) => Promise<boolean>;
+  deleteTag: (id: string) => Promise<boolean>;
+  getCategoryById: (id: string) => Category | undefined;
+  getTagById: (id: string) => ProductTag | undefined;
 }
 
-const CategoriesContext = createContext<CategoriesContextType | null>(null)
-
-const CATEGORIES_STORAGE_KEY = "bisuteria_categories"
-const TAGS_STORAGE_KEY = "bisuteria_tags"
-
-const defaultCategories: Category[] = [
-  {
-    id: "cat_1",
-    name: "collares",
-    description: "Collares artesanales únicos y elegantes",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "cat_2",
-    name: "aretes",
-    description: "Aretes delicados y llamativos para toda ocasión",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "cat_3",
-    name: "pulseras",
-    description: "Pulseras cómodas y hermosas hechas a mano",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "cat_4",
-    name: "accesorios",
-    description: "Anillos, broches y otros accesorios especiales",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-]
-
-const defaultTags: Tag[] = [
-  { id: "tag_1", name: "elegante", color: "#8B5CF6", isActive: true, createdAt: new Date().toISOString() },
-  { id: "tag_2", name: "casual", color: "#10B981", isActive: true, createdAt: new Date().toISOString() },
-  { id: "tag_3", name: "vintage", color: "#F59E0B", isActive: true, createdAt: new Date().toISOString() },
-  { id: "tag_4", name: "moderno", color: "#EF4444", isActive: true, createdAt: new Date().toISOString() },
-]
+const CategoriesContext = createContext<CategoriesContextType | null>(null);
 
 export function CategoriesProvider({ children }: { children: ReactNode }) {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [tags, setTags] = useState<Tag[]>([])
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<ProductTag[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingTags, setLoadingTags] = useState(true);
+  const { toast } = useToast();
 
-  // carga inicial
-  useEffect(() => {
-    const storedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY)
-    const storedTags = localStorage.getItem(TAGS_STORAGE_KEY)
-
-    if (storedCategories) {
-      setCategories(JSON.parse(storedCategories))
-    } else {
-      setCategories(defaultCategories)
-      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(defaultCategories))
+  const fetchCategories = useCallback(async () => {
+    setLoadingCategories(true);
+    try {
+      const response = await fetch("/api/categories");
+      if (!response.ok) {
+        throw new Error("Failed to fetch categories");
+      }
+      const data: Category[] = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las categorías.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingCategories(false);
     }
+  }, [toast]);
 
-    if (storedTags) {
-      setTags(JSON.parse(storedTags))
-    } else {
-      setTags(defaultTags)
-      localStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(defaultTags))
+  const fetchTags = useCallback(async () => {
+    setLoadingTags(true);
+    try {
+      const response = await fetch("/api/tags");
+      if (!response.ok) {
+        throw new Error("Failed to fetch tags");
+      }
+      const data: ProductTag[] = await response.json();
+      setTags(data);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las etiquetas.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingTags(false);
     }
-  }, [])
-
-  // persistencia
-  useEffect(() => {
-    localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories))
-  }, [categories])
+  }, [toast]);
 
   useEffect(() => {
-    localStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(tags))
-  }, [tags])
+    fetchCategories();
+    fetchTags();
+  }, [fetchCategories, fetchTags]);
 
-  // CRUD categorías
-  const createCategory = async (data: Omit<Category, "id" | "createdAt">): Promise<string> => {
-    const newCategory: Category = { ...data, id: `cat_${Date.now()}`, createdAt: new Date().toISOString() }
-    setCategories((prev) => [...prev, newCategory])
-    return newCategory.id
-  }
+  const createCategory = async (
+    data: Omit<Category, "id" | "createdAt" | "updatedAt">
+  ): Promise<string | undefined> => {
+    try {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setCategories((prev) => [...prev, result.category]);
+        toast({
+          title: "Categoría creada",
+          description: `Categoría '${result.category.name}' creada exitosamente.`,
+        });
+        return result.category.id;
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al crear categoría.",
+          variant: "destructive",
+        });
+        return undefined;
+      }
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al crear categoría.",
+        variant: "destructive",
+      });
+      return undefined;
+    }
+  };
 
-  const updateCategory = async (id: string, data: Partial<Category>) => {
-    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)))
-    return true
-  }
+  const updateCategory = async (
+    id: string,
+    data: Partial<Omit<Category, "createdAt" | "updatedAt">>
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setCategories((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, ...result.category } : c))
+        );
+        toast({
+          title: "Categoría actualizada",
+          description: `Categoría '${result.category.name}' actualizada exitosamente.`,
+        });
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al actualizar categoría.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al actualizar categoría.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
-  const deleteCategory = async (id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id))
-    return true
-  }
+  const deleteCategory = async (id: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setCategories((prev) => prev.filter((c) => c.id !== id));
+        toast({
+          title: "Categoría eliminada",
+          description: "Categoría eliminada exitosamente.",
+        });
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar categoría.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al eliminar categoría.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
-  // CRUD tags
-  const createTag = async (data: Omit<Tag, "id" | "createdAt">): Promise<string> => {
-    const newTag: Tag = { ...data, id: `tag_${Date.now()}`, createdAt: new Date().toISOString() }
-    setTags((prev) => [...prev, newTag])
-    return newTag.id
-  }
+  const createTag = async (
+    data: Omit<ProductTag, "id" | "createdAt" | "updatedAt">
+  ): Promise<string | undefined> => {
+    try {
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setTags((prev) => [...prev, result.tag]);
+        toast({
+          title: "Etiqueta creada",
+          description: `Etiqueta '${result.tag.name}' creada exitosamente.`,
+        });
+        return result.tag.id;
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al crear etiqueta.",
+          variant: "destructive",
+        });
+        return undefined;
+      }
+    } catch (error) {
+      console.error("Error creating tag:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al crear etiqueta.",
+        variant: "destructive",
+      });
+      return undefined;
+    }
+  };
 
-  const updateTag = async (id: string, data: Partial<Tag>) => {
-    setTags((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)))
-    return true
-  }
+  const updateTag = async (
+    id: string,
+    data: Partial<Omit<ProductTag, "createdAt" | "updatedAt">>
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/tags/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setTags((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, ...result.tag } : t))
+        );
+        toast({
+          title: "Etiqueta actualizada",
+          description: `Etiqueta '${result.tag.name}' actualizada exitosamente.`,
+        });
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al actualizar etiqueta.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating tag:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al actualizar etiqueta.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
-  const deleteTag = async (id: string) => {
-    setTags((prev) => prev.filter((t) => t.id !== id))
-    return true
-  }
+  const deleteTag = async (id: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/tags/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setTags((prev) => prev.filter((t) => t.id !== id));
+        toast({
+          title: "Etiqueta eliminada",
+          description: "Etiqueta eliminada exitosamente.",
+        });
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar etiqueta.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al eliminar etiqueta.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
-  const getCategoryById = (id: string) => categories.find((c) => c.id === id)
-  const getTagById = (id: string) => tags.find((t) => t.id === id)
+  const getCategoryById = (id: string) => categories.find((c) => c.id === id);
+  const getTagById = (id: string) => tags.find((t) => t.id === id);
 
   return (
     <CategoriesContext.Provider
       value={{
         categories,
         tags,
+        loadingCategories,
+        loadingTags,
+        fetchCategories,
+        fetchTags,
         createCategory,
         updateCategory,
         deleteCategory,
@@ -161,11 +350,12 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </CategoriesContext.Provider>
-  )
+  );
 }
 
 export function useCategories() {
-  const ctx = useContext(CategoriesContext)
-  if (!ctx) throw new Error("useCategories must be used within a CategoriesProvider")
-  return ctx
+  const ctx = useContext(CategoriesContext);
+  if (!ctx)
+    throw new Error("useCategories must be used within a CategoriesProvider");
+  return ctx;
 }

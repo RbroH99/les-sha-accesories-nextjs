@@ -1,20 +1,20 @@
-"use client"
-import Image from "next/image"
-import { getOptimizedImageUrl } from "@/lib/imagekit"
+"use client";
+import Image from "next/image";
+import { getOptimizedImageUrl } from "@/lib/imagekit-client";
 
 interface OptimizedImageProps {
-  src: string
-  alt: string
-  width?: number
-  height?: number
-  quality?: number
-  format?: "webp" | "jpg" | "png"
-  crop?: "maintain_ratio" | "force" | "at_least" | "at_max"
-  focus?: "auto" | "face" | "center"
-  className?: string
-  fill?: boolean
-  sizes?: string
-  priority?: boolean
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  quality?: number;
+  format?: "webp" | "jpg" | "png";
+  crop?: "maintain_ratio" | "force" | "at_least" | "at_max";
+  focus?: "auto" | "face" | "center";
+  className?: string;
+  fill?: boolean;
+  sizes?: string;
+  priority?: boolean;
 }
 
 export function OptimizedImage({
@@ -38,7 +38,7 @@ export function OptimizedImage({
     format,
     crop,
     focus,
-  })
+  });
 
   if (fill) {
     return (
@@ -50,7 +50,7 @@ export function OptimizedImage({
         sizes={sizes}
         priority={priority}
       />
-    )
+    );
   }
 
   return (
@@ -63,5 +63,5 @@ export function OptimizedImage({
       sizes={sizes}
       priority={priority}
     />
-  )
+  );
 }

@@ -1,18 +1,24 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { useState, useEffect } from "react";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Package,
   Users,
@@ -34,9 +40,10 @@ import {
   Folder,
   Hash,
   Menu,
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { ImageUpload } from "@/components/image-upload"
+  Palette,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/image-upload";
 import {
   Dialog,
   DialogContent,
@@ -44,177 +51,69 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CardDescription } from "@/components/ui/card"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { CardDescription } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useTheme, type CustomTheme } from "@/contexts/theme-context";
 
-// Mock data for demonstration
-const mockStats = {
-  totalProducts: 24,
-  totalOrders: 156,
-  totalCustomers: 89,
-  totalRevenue: 12450.0,
-}
-
-const mockOrders = [
-  {
-    id: "ORD-001",
-    customer: "María González",
-    email: "maria@email.com",
-    total: 85.0,
-    status: "pendiente",
-    date: "2024-01-15",
-    items: 3,
-  },
-  {
-    id: "ORD-002",
-    customer: "Carlos Ruiz",
-    email: "carlos@email.com",
-    total: 125.5,
-    status: "enviado",
-    date: "2024-01-14",
-    items: 2,
-  },
-  {
-    id: "ORD-003",
-    customer: "Ana López",
-    email: "ana@email.com",
-    total: 67.25,
-    status: "entregado",
-    date: "2024-01-13",
-    items: 1,
-  },
-]
-
-const mockProducts = [
-  {
-    id: 1,
-    name: "Collar Luna Dorada",
-    price: 45.0,
-    stock: 15,
-    category: "Collares",
-    status: "active",
-    image: "/placeholder.svg?height=100&width=100",
-    availabilityType: "stock_only",
-    estimatedDeliveryDays: 3,
-    hasWarranty: true,
-    warrantyDuration: 6,
-    warrantyUnit: "months",
-    discountId: null,
-    hasReturns: false,
-    returnDays: 30,
-  },
-  {
-    id: 2,
-    name: "Aretes Cristal Rosa",
-    price: 28.0,
-    stock: 8,
-    category: "Aretes",
-    status: "active",
-    image: "/placeholder.svg?height=100&width=100",
-    availabilityType: "stock_and_order",
-    estimatedDeliveryDays: 7,
-    hasWarranty: false,
-    discountId: "desc_1",
-    hasReturns: true,
-    returnDays: 15,
-  },
-  {
-    id: 3,
-    name: "Pulsera Perlas",
-    price: 35.0,
-    stock: 0,
-    category: "Pulseras",
-    status: "inactive",
-    image: "/placeholder.svg?height=100&width=100",
-    availabilityType: "order_only",
-    estimatedDeliveryDays: 14,
-    hasWarranty: true,
-    warrantyDuration: 1,
-    warrantyUnit: "years",
-    discountId: null,
-    hasReturns: false,
-    returnDays: null,
-  },
-]
-
-const mockDiscounts = [
-  {
-    id: "desc_1",
-    name: "Descuento Primavera",
-    description: "Descuento especial de temporada",
-    type: "percentage",
-    value: 15,
-    reason: "Promoción de temporada",
-    startDate: "2024-01-01",
-    endDate: "2024-03-31",
-    isActive: true,
-    isGeneric: false,
-    productIds: [2],
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "desc_2",
-    name: "Descuento VIP",
-    description: "Descuento para clientes VIP",
-    type: "fixed",
-    value: 10,
-    reason: "Cliente VIP",
-    isActive: true,
-    isGeneric: true,
-    productIds: [],
-    createdAt: "2024-01-01",
-  },
-]
-
-const mockCategories = [
-  {
-    id: "cat_1",
-    name: "Collares",
-    description: "Collares artesanales únicos y elegantes",
-    isActive: true,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "cat_2",
-    name: "Aretes",
-    description: "Aretes delicados y llamativos para toda ocasión",
-    isActive: true,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "cat_3",
-    name: "Pulseras",
-    description: "Pulseras cómodas y hermosas hechas a mano",
-    isActive: true,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "cat_4",
-    name: "Anillos",
-    description: "Anillos únicos y especiales",
-    isActive: true,
-    createdAt: "2024-01-01",
-  },
-]
-
-const mockTags = [
-  { id: "tag_1", name: "elegante", color: "#8B5CF6", isActive: true, createdAt: "2024-01-01" },
-  { id: "tag_2", name: "casual", color: "#10B981", isActive: true, createdAt: "2024-01-01" },
-  { id: "tag_3", name: "vintage", color: "#F59E0B", isActive: true, createdAt: "2024-01-01" },
-  { id: "tag_4", name: "moderno", color: "#EF4444", isActive: true, createdAt: "2024-01-01" },
-]
+import { useCallback } from "react";
+import { ProductDetail } from "@/lib/products-data";
+import { Order, OrderStatus } from "@/contexts/orders-context";
+import { Discount } from "@/contexts/discounts-context";
+import { Category, ProductTag } from "@/contexts/categories-context";
+import { AnyForeignKeyBuilder } from "drizzle-orm/gel-core";
 
 export default function AdminDashboard() {
-  const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState("overview")
-  const [orders, setOrders] = useState(mockOrders)
-  const [products, setProducts] = useState(mockProducts)
-  const [discounts, setDiscounts] = useState(mockDiscounts)
-  const [categories, setCategories] = useState(mockCategories)
-  const [tags, setTags] = useState(mockTags)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { toast } = useToast();
+  const {
+    customThemes,
+    addCustomTheme,
+    updateCustomTheme,
+    deleteCustomTheme,
+    setTheme,
+  } = useTheme();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<ProductDetail[]>([]);
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<ProductTag[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingDiscounts, setLoadingDiscounts] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingTags, setLoadingTags] = useState(true);
+
+  // Theme form state
+  const [newTheme, setNewTheme] = useState({
+    name: "",
+    description: "",
+    colors: {
+      primary: "#5a8b86",
+      secondary: "#a8c5c1",
+      accent: "#f59e0b",
+      background: "#ffffff",
+      foreground: "#1f2937",
+      muted: "#f3f4f6",
+      border: "#e5e7eb",
+      card: "#ffffff",
+      destructive: "#ef4444",
+    },
+    isActive: true,
+  });
+
+  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false);
+  const [editingTheme, setEditingTheme] = useState<CustomTheme | null>(null);
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -231,7 +130,7 @@ export default function AdminDashboard() {
     discountId: "",
     hasReturns: false,
     returnDays: "",
-  })
+  });
 
   // Discount form state
   const [newDiscount, setNewDiscount] = useState({
@@ -245,85 +144,162 @@ export default function AdminDashboard() {
     isActive: true,
     isGeneric: false,
     productIds: [] as number[],
-  })
+  });
 
   // Category form state
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
     isActive: true,
-  })
+  });
 
   // Tag form state
   const [newTag, setNewTag] = useState({
     name: "",
     color: "#8B5CF6",
     isActive: true,
-  })
+  });
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("")
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState("")
-  const [selectedAvailabilityFilter, setSelectedAvailabilityFilter] = useState("")
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" })
-  const [stockRange, setStockRange] = useState({ min: "", max: "" })
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
-  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false)
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
-  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState(null)
-  const [editingDiscount, setEditingDiscount] = useState(null)
-  const [editingCategory, setEditingCategory] = useState(null)
-  const [editingTag, setEditingTag] = useState(null)
-  const [viewingProduct, setViewingProduct] = useState(null)
-  const [filteredProducts, setFilteredProducts] = useState(mockProducts)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("");
+  const [selectedAvailabilityFilter, setSelectedAvailabilityFilter] =
+    useState("");
+  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [stockRange, setStockRange] = useState({ min: "", max: "" });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductDetail | null>(
+    null
+  );
+  const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingTag, setEditingTag] = useState<ProductTag | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<ProductDetail | null>(
+    null
+  );
+  const [filteredProducts, setFilteredProducts] = useState<ProductDetail[]>([]);
 
-  const itemsPerPageOptions = [5, 10, 20, 50]
+  const itemsPerPageOptions = [5, 10, 20, 50];
+
+  const fetchAllData = useCallback(async () => {
+    setLoadingOrders(true);
+    setLoadingProducts(true);
+    setLoadingDiscounts(true);
+    setLoadingCategories(true);
+    setLoadingTags(true);
+
+    try {
+      const [ordersRes, productsRes, discountsRes, categoriesRes, tagsRes] =
+        await Promise.all([
+          fetch("/api/orders"),
+          fetch("/api/products"),
+          fetch("/api/discounts"),
+          fetch("/api/categories"),
+          fetch("/api/tags"),
+        ]);
+
+      const [
+        ordersData,
+        productsData,
+        discountsData,
+        categoriesData,
+        tagsData,
+      ] = await Promise.all([
+        ordersRes.json(),
+        productsRes.json(),
+        discountsRes.json(),
+        categoriesRes.json(),
+        tagsRes.json(),
+      ]);
+
+      setOrders(ordersData);
+      setProducts(productsData);
+      setDiscounts(discountsData);
+      setCategories(categoriesData);
+      setTags(tagsData);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos del dashboard.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingOrders(false);
+      setLoadingProducts(false);
+      setLoadingDiscounts(false);
+      setLoadingCategories(false);
+      setLoadingTags(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
 
   // Filter products
   useEffect(() => {
-    let filtered = products
+    let filtered = products;
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter((product) => product.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      filtered = filtered.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     // Category filter
     if (selectedCategoryFilter) {
-      filtered = filtered.filter((product) => product.category === selectedCategoryFilter)
+      filtered = filtered.filter(
+        (product) => product.categoryId === selectedCategoryFilter
+      );
     }
 
-    // Status filter
+    // Status filter (assuming product status is boolean isActive)
     if (selectedStatusFilter) {
-      filtered = filtered.filter((product) => product.status === selectedStatusFilter)
+      filtered = filtered.filter((product) =>
+        selectedStatusFilter === "active" ? product.isActive : !product.isActive
+      );
     }
 
     // Availability filter
     if (selectedAvailabilityFilter) {
-      filtered = filtered.filter((product) => product.availabilityType === selectedAvailabilityFilter)
+      filtered = filtered.filter(
+        (product) => product.availabilityType === selectedAvailabilityFilter
+      );
     }
 
     // Price range filter
     if (priceRange.min) {
-      filtered = filtered.filter((product) => product.price >= Number.parseFloat(priceRange.min))
+      filtered = filtered.filter(
+        (product) => product.price >= Number.parseFloat(priceRange.min)
+      );
     }
     if (priceRange.max) {
-      filtered = filtered.filter((product) => product.price <= Number.parseFloat(priceRange.max))
+      filtered = filtered.filter(
+        (product) => product.price <= Number.parseFloat(priceRange.max)
+      );
     }
 
     // Stock range filter
     if (stockRange.min) {
-      filtered = filtered.filter((product) => product.stock >= Number.parseInt(stockRange.min))
+      filtered = filtered.filter(
+        (product) => product.stock >= Number.parseInt(stockRange.min)
+      );
     }
     if (stockRange.max) {
-      filtered = filtered.filter((product) => product.stock <= Number.parseInt(stockRange.max))
+      filtered = filtered.filter(
+        (product) => product.stock <= Number.parseInt(stockRange.max)
+      );
     }
 
-    setFilteredProducts(filtered)
+    setFilteredProducts(filtered);
   }, [
     products,
     searchTerm,
@@ -332,78 +308,84 @@ export default function AdminDashboard() {
     selectedAvailabilityFilter,
     priceRange,
     stockRange,
-  ])
+  ]);
 
   // Calculate paginated products
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
   // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1)
-  }, [filteredProducts.length, itemsPerPage])
+    setCurrentPage(1);
+  }, [filteredProducts.length, itemsPerPage]);
 
   const getAvailabilityIcon = (type: string) => {
     switch (type) {
       case "stock_only":
-        return <Package className="w-4 h-4 text-blue-600" />
+        return <Package className="w-4 h-4 text-blue-600" />;
       case "stock_and_order":
-        return <CheckCircle className="w-4 h-4 text-green-600" />
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case "order_only":
-        return <Clock className="w-4 h-4 text-orange-600" />
+        return <Clock className="w-4 h-4 text-orange-600" />;
       default:
-        return <XCircle className="w-4 h-4 text-gray-600" />
+        return <XCircle className="w-4 h-4 text-gray-600" />;
     }
-  }
+  };
 
   const getAvailabilityText = (type: string) => {
     switch (type) {
       case "stock_only":
-        return "Solo Stock"
+        return "Solo Stock";
       case "stock_and_order":
-        return "Stock + Pedido"
+        return "Stock + Pedido";
       case "order_only":
-        return "Solo Pedido"
+        return "Solo Pedido";
       default:
-        return "Desconocido"
+        return "Desconocido";
     }
-  }
+  };
 
-  const handleSubmitProduct = (e) => {
-    e.preventDefault()
-    handleAddProduct()
-    setIsProductDialogOpen(false)
-  }
+  const handleSubmitProduct = (e: any) => {
+    e.preventDefault();
+    handleAddProduct();
+    setIsProductDialogOpen(false);
+  };
 
-  const handleSubmitDiscount = (e) => {
-    e.preventDefault()
-    handleAddDiscount()
-    setIsDiscountDialogOpen(false)
-  }
+  const handleSubmitDiscount = (e: any) => {
+    e.preventDefault();
+    handleAddDiscount();
+    setIsDiscountDialogOpen(false);
+  };
 
-  const handleSubmitCategory = (e) => {
-    e.preventDefault()
-    handleAddCategory()
-    setIsCategoryDialogOpen(false)
-  }
+  const handleSubmitCategory = (e: any) => {
+    e.preventDefault();
+    handleAddCategory();
+    setIsCategoryDialogOpen(false);
+  };
 
-  const handleSubmitTag = (e) => {
-    e.preventDefault()
-    handleAddTag()
-    setIsTagDialogOpen(false)
-  }
+  const handleSubmitTag = (e: any) => {
+    e.preventDefault();
+    handleAddTag();
+    setIsTagDialogOpen(false);
+  };
 
-  const handleEditProduct = (product) => {
-    setEditingProduct(product)
+  const handleSubmitTheme = (e: any) => {
+    e.preventDefault();
+    handleAddTheme();
+    setIsThemeDialogOpen(false);
+  };
+
+  const handleEditProduct = (product: ProductDetail) => {
+    setEditingProduct(product);
     setNewProduct({
       name: product.name,
       description: "",
       price: product.price.toString(),
-      category: product.category,
+      category: product.categoryId,
       stock: product.stock.toString(),
-      images: [product.image],
+      images: product.images,
       availabilityType: product.availabilityType,
       estimatedDeliveryDays: product.estimatedDeliveryDays?.toString() || "7",
       hasWarranty: product.hasWarranty || false,
@@ -411,13 +393,13 @@ export default function AdminDashboard() {
       warrantyUnit: product.warrantyUnit || "months",
       discountId: product.discountId || "",
       hasReturns: product.hasReturns || false,
-      returnDays: product.returnDays?.toString() || "",
-    })
-    setIsProductDialogOpen(true)
-  }
+      returnDays: product.returnPeriodDays?.toString() || "",
+    });
+    setIsProductDialogOpen(true);
+  };
 
-  const handleEditDiscount = (discount) => {
-    setEditingDiscount(discount)
+  const handleEditDiscount = (discount: Discount) => {
+    setEditingDiscount(discount);
     setNewDiscount({
       name: discount.name,
       description: discount.description || "",
@@ -429,61 +411,164 @@ export default function AdminDashboard() {
       isActive: discount.isActive,
       isGeneric: discount.isGeneric,
       productIds: discount.productIds || [],
-    })
-    setIsDiscountDialogOpen(true)
-  }
+    });
+    setIsDiscountDialogOpen(true);
+  };
 
-  const handleEditCategory = (category) => {
-    setEditingCategory(category)
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
     setNewCategory({
       name: category.name,
       description: category.description || "",
       isActive: category.isActive,
-    })
-    setIsCategoryDialogOpen(true)
-  }
+    });
+    setIsCategoryDialogOpen(true);
+  };
 
-  const handleEditTag = (tag) => {
-    setEditingTag(tag)
+  const handleEditTag = (tag: ProductTag) => {
+    setEditingTag(tag);
     setNewTag({
       name: tag.name,
       color: tag.color,
       isActive: tag.isActive,
-    })
-    setIsTagDialogOpen(true)
-  }
+    });
+    setIsTagDialogOpen(true);
+  };
 
-  const handleDeleteProduct = (id) => {
-    setProducts(products.filter((p) => p.id !== id))
-    toast({
-      title: "Producto eliminado",
-      description: "El producto se eliminó correctamente",
-    })
-  }
+  const handleEditTheme = (theme: CustomTheme) => {
+    setEditingTheme(theme);
+    setNewTheme({
+      name: theme.name,
+      description: theme.description || "",
+      colors: { ...theme.colors },
+      isActive: theme.isActive,
+    });
+    setIsThemeDialogOpen(true);
+  };
 
-  const handleDeleteDiscount = (id) => {
-    setDiscounts(discounts.filter((d) => d.id !== id))
-    toast({
-      title: "Descuento eliminado",
-      description: "El descuento se eliminó correctamente",
-    })
-  }
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      const response = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Producto eliminado",
+          description: "El producto se eliminó correctamente",
+        });
+        fetchAllData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar producto",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al eliminar producto",
+        variant: "destructive",
+      });
+    }
+  };
 
-  const handleDeleteCategory = (id) => {
-    setCategories(categories.filter((c) => c.id !== id))
-    toast({
-      title: "Categoría eliminada",
-      description: "La categoría se eliminó correctamente",
-    })
-  }
+  const handleDeleteDiscount = async (id: string) => {
+    try {
+      const response = await fetch(`/api/discounts/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Descuento eliminado",
+          description: "El descuento se eliminó correctamente",
+        });
+        fetchAllData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar descuento",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting discount:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al eliminar descuento",
+        variant: "destructive",
+      });
+    }
+  };
 
-  const handleDeleteTag = (id) => {
-    setTags(tags.filter((t) => t.id !== id))
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Categoría eliminada",
+          description: "La categoría se eliminó correctamente",
+        });
+        fetchAllData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar categoría",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al eliminar categoría",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTag = async (id: string) => {
+    try {
+      const response = await fetch(`/api/tags/${id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Tag eliminado",
+          description: "El tag se eliminó correctamente",
+        });
+        fetchAllData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Error al eliminar tag",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al eliminar tag",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTheme = (id: string) => {
+    deleteCustomTheme(id);
     toast({
-      title: "Tag eliminado",
-      description: "El tag se eliminó correctamente",
-    })
-  }
+      title: "Tema eliminado",
+      description: "El tema se eliminó correctamente",
+    });
+  };
 
   const resetProductForm = () => {
     setNewProduct({
@@ -501,10 +586,10 @@ export default function AdminDashboard() {
       discountId: "",
       hasReturns: false,
       returnDays: "",
-    })
-    setEditingProduct(null)
-    setIsProductDialogOpen(false)
-  }
+    });
+    setEditingProduct(null);
+    setIsProductDialogOpen(false);
+  };
 
   const resetDiscountForm = () => {
     setNewDiscount({
@@ -518,227 +603,453 @@ export default function AdminDashboard() {
       isActive: true,
       isGeneric: false,
       productIds: [],
-    })
-    setEditingDiscount(null)
-    setIsDiscountDialogOpen(false)
-  }
+    });
+    setEditingDiscount(null);
+    setIsDiscountDialogOpen(false);
+  };
 
   const resetCategoryForm = () => {
     setNewCategory({
       name: "",
       description: "",
       isActive: true,
-    })
-    setEditingCategory(null)
-    setIsCategoryDialogOpen(false)
-  }
+    });
+    setEditingCategory(null);
+    setIsCategoryDialogOpen(false);
+  };
 
   const resetTagForm = () => {
     setNewTag({
       name: "",
       color: "#8B5CF6",
       isActive: true,
-    })
-    setEditingTag(null)
-    setIsTagDialogOpen(false)
-  }
+    });
+    setEditingTag(null);
+    setIsTagDialogOpen(false);
+  };
+
+  const resetThemeForm = () => {
+    setNewTheme({
+      name: "",
+      description: "",
+      colors: {
+        primary: "#5a8b86",
+        secondary: "#a8c5c1",
+        accent: "#f59e0b",
+        background: "#ffffff",
+        foreground: "#1f2937",
+        muted: "#f3f4f6",
+        border: "#e5e7eb",
+        card: "#ffffff",
+        destructive: "#ef4444",
+      },
+      isActive: true,
+    });
+    setEditingTheme(null);
+    setIsThemeDialogOpen(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pendiente":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800";
       case "aceptado":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800";
       case "en_proceso":
-        return "bg-purple-100 text-purple-800"
+        return "bg-purple-100 text-purple-800";
       case "enviado":
-        return "bg-orange-100 text-orange-800"
+        return "bg-orange-100 text-orange-800";
       case "entregado":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800";
       case "cancelado":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    setOrders(
+      orders.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
     toast({
       title: "Estado actualizado",
       description: `El pedido ${orderId} ha sido actualizado a ${newStatus}`,
-    })
-  }
+    });
+  };
 
-  const handleAddProduct = () => {
-    if (!newProduct.name || !newProduct.price) {
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.price || !newProduct.category) {
       toast({
         title: "Error",
-        description: "Por favor completa los campos requeridos",
+        description:
+          "Por favor completa los campos requeridos (Nombre, Precio, Categoría)",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    const product = {
-      id: editingProduct ? editingProduct.id : products.length + 1,
+    const productData = {
       name: newProduct.name,
+      description: newProduct.description,
       price: Number.parseFloat(newProduct.price),
+      categoryId: newProduct.category, // Use categoryId
+      images: newProduct.images,
+      materials: [], // Assuming materials are not managed here, or add a field for it
+      dimensions: "", // Assuming dimensions are not managed here
+      care: "", // Assuming care is not managed here
       stock: Number.parseInt(newProduct.stock) || 0,
-      category: newProduct.category,
-      status: "active",
-      image: newProduct.images[0] || "/placeholder.svg?height=100&width=100",
       availabilityType: newProduct.availabilityType,
-      estimatedDeliveryDays: Number.parseInt(newProduct.estimatedDeliveryDays),
+      estimatedDeliveryDays: newProduct.estimatedDeliveryDays
+        ? Number.parseInt(newProduct.estimatedDeliveryDays)
+        : null,
+      returnPeriodDays: newProduct.hasReturns
+        ? newProduct.returnDays
+          ? Number.parseInt(newProduct.returnDays)
+          : 30
+        : 0,
+      isNew: true, // Or add a field for this
+      isActive: true, // Or add a field for this
       hasWarranty: newProduct.hasWarranty,
-      warrantyDuration: newProduct.hasWarranty ? Number.parseInt(newProduct.warrantyDuration) : undefined,
-      warrantyUnit: newProduct.hasWarranty ? newProduct.warrantyUnit : undefined,
+      warrantyDuration: newProduct.hasWarranty
+        ? newProduct.warrantyDuration
+          ? Number.parseInt(newProduct.warrantyDuration)
+          : null
+        : null,
+      warrantyUnit: newProduct.hasWarranty ? newProduct.warrantyUnit : null,
       discountId: newProduct.discountId || null,
-      hasReturns: newProduct.hasReturns,
-      returnDays: newProduct.hasReturns ? Number.parseInt(newProduct.returnDays) : undefined,
-    }
+    };
 
-    if (editingProduct) {
-      setProducts(products.map((p) => (p.id === editingProduct.id ? product : p)))
-      toast({
-        title: "Producto actualizado",
-        description: "El producto se actualizó correctamente",
-      })
-    } else {
-      setProducts([...products, product])
-      toast({
-        title: "Producto agregado",
-        description: "El producto ha sido agregado exitosamente",
-      })
-    }
-
-    resetProductForm()
-  }
-
-  const handleAddDiscount = () => {
-    if (!newDiscount.name || !newDiscount.value) {
+    try {
+      let response;
+      let result;
+      if (editingProduct) {
+        response = await fetch(`/api/products/${editingProduct.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Producto actualizado",
+            description: "El producto se actualizó correctamente",
+          });
+          fetchAllData(); // Re-fetch all data to update the list
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al actualizar producto",
+            variant: "destructive",
+          });
+        }
+      } else {
+        response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Producto agregado",
+            description: "El producto ha sido agregado exitosamente",
+          });
+          fetchAllData(); // Re-fetch all data to update the list
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al agregar producto",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error saving product:", error);
       toast({
         title: "Error",
-        description: "Por favor completa los campos requeridos",
+        description: "Error de red al guardar producto",
         variant: "destructive",
-      })
-      return
+      });
+    } finally {
+      resetProductForm();
+    }
+  };
+
+  const handleAddDiscount = async () => {
+    if (!newDiscount.name || !newDiscount.value || !newDiscount.type) {
+      toast({
+        title: "Error",
+        description:
+          "Por favor completa los campos requeridos (Nombre, Valor, Tipo)",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const discount = {
-      id: editingDiscount ? editingDiscount.id : `desc_${Date.now()}`,
+    const discountData = {
       name: newDiscount.name,
       description: newDiscount.description,
       type: newDiscount.type,
       value: Number.parseFloat(newDiscount.value),
       reason: newDiscount.reason,
-      startDate: newDiscount.isGeneric ? undefined : newDiscount.startDate,
-      endDate: newDiscount.isGeneric ? undefined : newDiscount.endDate,
+      startDate: newDiscount.startDate || null,
+      endDate: newDiscount.endDate || null,
       isActive: newDiscount.isActive,
       isGeneric: newDiscount.isGeneric,
-      productIds: newDiscount.productIds,
-      createdAt: editingDiscount ? editingDiscount.createdAt : new Date().toISOString(),
-    }
+      // productIds are handled separately if needed, not directly in discount creation/update
+    };
 
-    if (editingDiscount) {
-      setDiscounts(discounts.map((d) => (d.id === editingDiscount.id ? discount : d)))
+    try {
+      let response;
+      let result;
+      if (editingDiscount) {
+        response = await fetch(`/api/discounts/${editingDiscount.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(discountData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Descuento actualizado",
+            description: "El descuento se actualizó correctamente",
+          });
+          fetchAllData();
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al actualizar descuento",
+            variant: "destructive",
+          });
+        }
+      } else {
+        response = await fetch("/api/discounts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(discountData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Descuento creado",
+            description: "El descuento ha sido creado exitosamente",
+          });
+          fetchAllData();
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al crear descuento",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error saving discount:", error);
       toast({
-        title: "Descuento actualizado",
-        description: "El descuento se actualizó correctamente",
-      })
-    } else {
-      setDiscounts([...discounts, discount])
-      toast({
-        title: "Descuento creado",
-        description: "El descuento ha sido creado exitosamente",
-      })
+        title: "Error",
+        description: "Error de red al guardar descuento",
+        variant: "destructive",
+      });
+    } finally {
+      resetDiscountForm();
     }
+  };
 
-    resetDiscountForm()
-  }
-
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategory.name) {
       toast({
         title: "Error",
         description: "Por favor completa el nombre de la categoría",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    const category = {
-      id: editingCategory ? editingCategory.id : `cat_${Date.now()}`,
+    const categoryData = {
       name: newCategory.name,
       description: newCategory.description,
       isActive: newCategory.isActive,
-      createdAt: editingCategory ? editingCategory.createdAt : new Date().toISOString(),
-    }
+    };
 
-    if (editingCategory) {
-      setCategories(categories.map((c) => (c.id === editingCategory.id ? category : c)))
-      toast({
-        title: "Categoría actualizada",
-        description: "La categoría se actualizó correctamente",
-      })
-    } else {
-      setCategories([...categories, category])
-      toast({
-        title: "Categoría creada",
-        description: "La categoría ha sido creada exitosamente",
-      })
-    }
-
-    resetCategoryForm()
-  }
-
-  const handleAddTag = () => {
-    if (!newTag.name) {
+    try {
+      let response;
+      let result;
+      if (editingCategory) {
+        response = await fetch(`/api/categories/${editingCategory.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(categoryData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Categoría actualizada",
+            description: "La categoría se actualizó correctamente",
+          });
+          fetchAllData();
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al actualizar categoría",
+            variant: "destructive",
+          });
+        }
+      } else {
+        response = await fetch("/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(categoryData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Categoría creada",
+            description: "La categoría ha sido creada exitosamente",
+          });
+          fetchAllData();
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al crear categoría",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error saving category:", error);
       toast({
         title: "Error",
-        description: "Por favor completa el nombre del tag",
+        description: "Error de red al guardar categoría",
         variant: "destructive",
-      })
-      return
+      });
+    } finally {
+      resetCategoryForm();
+    }
+  };
+
+  const handleAddTag = async () => {
+    if (!newTag.name || !newTag.color) {
+      toast({
+        title: "Error",
+        description: "Por favor completa el nombre y color del tag",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const tag = {
-      id: editingTag ? editingTag.id : `tag_${Date.now()}`,
+    const tagData = {
       name: newTag.name,
       color: newTag.color,
       isActive: newTag.isActive,
-      createdAt: editingTag ? editingTag.createdAt : new Date().toISOString(),
+    };
+
+    try {
+      let response;
+      let result;
+      if (editingTag) {
+        response = await fetch(`/api/tags/${editingTag.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tagData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Tag actualizado",
+            description: "El tag se actualizó correctamente",
+          });
+          fetchAllData();
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al actualizar tag",
+            variant: "destructive",
+          });
+        }
+      } else {
+        response = await fetch("/api/tags", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tagData),
+        });
+        result = await response.json();
+        if (response.ok) {
+          toast({
+            title: "Tag creado",
+            description: "El tag ha sido creado exitosamente",
+          });
+          fetchAllData();
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Error al crear tag",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error saving tag:", error);
+      toast({
+        title: "Error",
+        description: "Error de red al guardar tag",
+        variant: "destructive",
+      });
+    } finally {
+      resetTagForm();
+    }
+  };
+
+  const handleAddTheme = () => {
+    if (!newTheme.name) {
+      toast({
+        title: "Error",
+        description: "Por favor completa el nombre del tema",
+        variant: "destructive",
+      });
+      return;
     }
 
-    if (editingTag) {
-      setTags(tags.map((t) => (t.id === editingTag.id ? tag : t)))
+    if (editingTheme) {
+      updateCustomTheme(editingTheme.id, newTheme);
       toast({
-        title: "Tag actualizado",
-        description: "El tag se actualizó correctamente",
-      })
+        title: "Tema actualizado",
+        description: "El tema se actualizó correctamente",
+      });
     } else {
-      setTags([...tags, tag])
+      addCustomTheme(newTheme);
       toast({
-        title: "Tag creado",
-        description: "El tag ha sido creado exitosamente",
-      })
+        title: "Tema creado",
+        description: "El tema ha sido creado exitosamente",
+      });
     }
 
-    resetTagForm()
-  }
+    resetThemeForm();
+  };
 
   const handleProductToggleForDiscount = (productId: number) => {
     setNewDiscount((prev) => {
-      const productIds = [...prev.productIds]
-      const index = productIds.indexOf(productId)
+      const productIds = [...prev.productIds];
+      const index = productIds.indexOf(productId);
       if (index > -1) {
-        productIds.splice(index, 1)
+        productIds.splice(index, 1);
       } else {
-        productIds.push(productId)
+        productIds.push(productId);
       }
-      return { ...prev, productIds }
-    })
-  }
+      return { ...prev, productIds };
+    });
+  };
+
+  const copyThemeColors = (theme: CustomTheme) => {
+    const colorsText = JSON.stringify(theme.colors, null, 2);
+    navigator.clipboard.writeText(colorsText);
+    toast({
+      title: "Colores copiados",
+      description: "Los colores del tema han sido copiados al portapapeles",
+    });
+  };
 
   // Mobile navigation component
   const MobileNavigation = () => (
@@ -759,6 +1070,7 @@ export default function AdminDashboard() {
                 { id: "products", label: "Productos", icon: Package },
                 { id: "categories", label: "Categorías", icon: Folder },
                 { id: "discounts", label: "Descuentos", icon: Percent },
+                { id: "themes", label: "Temas", icon: Palette },
                 { id: "settings", label: "Configuración", icon: Save },
               ].map((tab) => (
                 <Button
@@ -766,8 +1078,8 @@ export default function AdminDashboard() {
                   variant={activeTab === tab.id ? "secondary" : "ghost"}
                   className="w-full justify-start"
                   onClick={() => {
-                    setActiveTab(tab.id)
-                    setIsMobileMenuOpen(false)
+                    setActiveTab(tab.id);
+                    setIsMobileMenuOpen(false);
                   }}
                 >
                   <tab.icon className="mr-2 h-4 w-4" />
@@ -779,28 +1091,37 @@ export default function AdminDashboard() {
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Panel de Administración</h1>
-              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Gestiona tu tienda de bisutería</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                Panel de Administración
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+                Gestiona tu tienda de bisutería
+              </p>
             </div>
             <MobileNavigation />
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="hidden md:grid w-full grid-cols-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4 sm:space-y-6"
+        >
+          <TabsList className="hidden md:grid w-full grid-cols-7">
             <TabsTrigger value="overview">Resumen</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Productos</TabsTrigger>
             <TabsTrigger value="categories">Categorías</TabsTrigger>
             <TabsTrigger value="discounts">Descuentos</TabsTrigger>
+            <TabsTrigger value="themes">Temas</TabsTrigger>
             <TabsTrigger value="settings">Configuración</TabsTrigger>
           </TabsList>
 
@@ -809,41 +1130,44 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Productos</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalProducts}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Pedidos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total Pedidos
+                  </CardTitle>
                   <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalOrders}</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {orders.length}
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Clientes</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total Clientes
+                  </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalCustomers}</div>
+                  <div className="text-xl sm:text-2xl font-bold">0</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Ingresos Totales</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Ingresos Totales
+                  </CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">${mockStats.totalRevenue.toFixed(2)}</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    $
+                    {orders
+                      .reduce((sum, order) => sum + order.totalAmount, 0)
+                      .toFixed(2)}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -851,7 +1175,9 @@ export default function AdminDashboard() {
             {/* Recent Orders */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Pedidos Recientes</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">
+                  Pedidos Recientes
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 sm:space-y-4">
@@ -861,13 +1187,25 @@ export default function AdminDashboard() {
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg space-y-2 sm:space-y-0"
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-sm sm:text-base">{order.customer}</p>
-                        <p className="text-xs sm:text-sm text-gray-600">{order.email}</p>
-                        <p className="text-xs sm:text-sm text-gray-500">{order.date}</p>
+                        <p className="font-medium text-sm sm:text-base">
+                          {order.customerName}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {order.customerEmail}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          {order.createdAt}
+                        </p>
                       </div>
                       <div className="text-left sm:text-right">
-                        <p className="font-bold text-sm sm:text-base">${order.total.toFixed(2)}</p>
-                        <Badge className={`${getStatusColor(order.status)} text-xs`}>{order.status}</Badge>
+                        <p className="font-bold text-sm sm:text-base">
+                          ${order.totalAmount.toFixed(2)}
+                        </p>
+                        <Badge
+                          className={`${getStatusColor(order.status)} text-xs`}
+                        >
+                          {order.status}
+                        </Badge>
                       </div>
                     </div>
                   ))}
@@ -879,44 +1217,66 @@ export default function AdminDashboard() {
           <TabsContent value="orders" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Gestión de Pedidos</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">
+                  Gestión de Pedidos
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 sm:space-y-4">
                   {orders.map((order) => (
-                    <div key={order.id} className="border rounded-lg p-3 sm:p-4">
+                    <div
+                      key={order.id}
+                      className="border rounded-lg p-3 sm:p-4"
+                    >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-sm sm:text-base">{order.id}</h3>
+                          <h3 className="font-semibold text-sm sm:text-base">
+                            {order.id}
+                          </h3>
                           <p className="text-xs sm:text-sm text-gray-600">
-                            {order.customer} - {order.email}
+                            {order.customerName} - {order.customerEmail}
                           </p>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {order.date} - {order.items} items
+                            {order.createdAt} - {order.items.length} items
                           </p>
                         </div>
                         <div className="text-left sm:text-right">
-                          <p className="font-bold text-base sm:text-lg">${order.total.toFixed(2)}</p>
-                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                          <p className="font-bold text-base sm:text-lg">
+                            ${order.totalAmount.toFixed(2)}
+                          </p>
+                          <Badge className={getStatusColor(order.status)}>
+                            {order.status}
+                          </Badge>
                         </div>
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-2">
-                        <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value)}>
+                        <Select
+                          value={order.status}
+                          onValueChange={(value) =>
+                            handleStatusChange(order.id, value as OrderStatus)
+                          }
+                        >
                           <SelectTrigger className="w-full sm:w-48">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="pendiente">Pendiente</SelectItem>
                             <SelectItem value="aceptado">Aceptado</SelectItem>
-                            <SelectItem value="en_proceso">En Proceso</SelectItem>
+                            <SelectItem value="en_proceso">
+                              En Proceso
+                            </SelectItem>
                             <SelectItem value="enviado">Enviado</SelectItem>
                             <SelectItem value="entregado">Entregado</SelectItem>
                             <SelectItem value="cancelado">Cancelado</SelectItem>
                           </SelectContent>
                         </Select>
 
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalles
                         </Button>
@@ -933,51 +1293,62 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Productos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total Productos
+                  </CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{mockStats.totalProducts}</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {products.length}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {mockProducts.filter((p) => p.status === "active").length} activos •{" "}
-                    {mockProducts.filter((p) => p.status === "inactive").length} inactivos
+                    {products.filter((p) => p.isActive).length} activos •{" "}
+                    {products.filter((p) => !p.isActive).length} inactivos
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Valor Inventario</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Valor Inventario
+                  </CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl sm:text-2xl font-bold">
-                    ${mockProducts.reduce((sum, p) => sum + p.price * p.stock, 0).toFixed(2)}
+                    $
+                    {products
+                      .reduce((sum, p) => sum + p.price * p.stock, 0)
+                      .toFixed(2)}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Stock Bajo</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold text-red-600">
-                    {mockProducts.filter((p) => p.stock < 10 && p.availabilityType !== "order_only").length}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">Productos con menos de 10 unidades</div>
-                </CardContent>
-              </Card>
+              <div className="text-xl sm:text-2xl font-bold text-red-600">
+                {
+                  products.filter(
+                    (p) => p.stock < 10 && p.availabilityType !== "order_only"
+                  ).length
+                }
+              </div>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Sin Stock</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Sin Stock
+                  </CardTitle>
                   <XCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl sm:text-2xl font-bold text-red-600">
-                    {mockProducts.filter((p) => p.stock === 0 && p.availabilityType !== "order_only").length}
+                    {
+                      products.filter(
+                        (p) =>
+                          p.stock === 0 && p.availabilityType !== "order_only"
+                      ).length
+                    }
                   </div>
                 </CardContent>
               </Card>
@@ -995,12 +1366,12 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setSearchTerm("")
-                      setSelectedCategoryFilter("")
-                      setSelectedStatusFilter("")
-                      setSelectedAvailabilityFilter("")
-                      setPriceRange({ min: "", max: "" })
-                      setStockRange({ min: "", max: "" })
+                      setSearchTerm("");
+                      setSelectedCategoryFilter("");
+                      setSelectedStatusFilter("");
+                      setSelectedAvailabilityFilter("");
+                      setPriceRange({ min: "", max: "" });
+                      setStockRange({ min: "", max: "" });
                     }}
                   >
                     Limpiar Filtros
@@ -1021,7 +1392,9 @@ export default function AdminDashboard() {
 
                   <Select
                     value={selectedCategoryFilter || "all"}
-                    onValueChange={(value) => setSelectedCategoryFilter(value === "all" ? "" : value)}
+                    onValueChange={(value) =>
+                      setSelectedCategoryFilter(value === "all" ? "" : value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Categoría" />
@@ -1038,7 +1411,9 @@ export default function AdminDashboard() {
 
                   <Select
                     value={selectedStatusFilter || "all"}
-                    onValueChange={(value) => setSelectedStatusFilter(value === "all" ? "" : value)}
+                    onValueChange={(value) =>
+                      setSelectedStatusFilter(value === "all" ? "" : value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Estado" />
@@ -1052,7 +1427,11 @@ export default function AdminDashboard() {
 
                   <Select
                     value={selectedAvailabilityFilter || "all"}
-                    onValueChange={(value) => setSelectedAvailabilityFilter(value === "all" ? "" : value)}
+                    onValueChange={(value) =>
+                      setSelectedAvailabilityFilter(
+                        value === "all" ? "" : value
+                      )
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Disponibilidad" />
@@ -1060,7 +1439,9 @@ export default function AdminDashboard() {
                     <SelectContent>
                       <SelectItem value="all">Todos los tipos</SelectItem>
                       <SelectItem value="stock_only">Solo Stock</SelectItem>
-                      <SelectItem value="stock_and_order">Stock + Pedido</SelectItem>
+                      <SelectItem value="stock_and_order">
+                        Stock + Pedido
+                      </SelectItem>
                       <SelectItem value="order_only">Solo Pedido</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1070,13 +1451,23 @@ export default function AdminDashboard() {
                       placeholder="Precio mín"
                       type="number"
                       value={priceRange.min}
-                      onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
+                      onChange={(e) =>
+                        setPriceRange((prev) => ({
+                          ...prev,
+                          min: e.target.value,
+                        }))
+                      }
                     />
                     <Input
                       placeholder="Precio máx"
                       type="number"
                       value={priceRange.max}
-                      onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
+                      onChange={(e) =>
+                        setPriceRange((prev) => ({
+                          ...prev,
+                          max: e.target.value,
+                        }))
+                      }
                     />
                   </div>
 
@@ -1085,18 +1476,29 @@ export default function AdminDashboard() {
                       placeholder="Stock mín"
                       type="number"
                       value={stockRange.min}
-                      onChange={(e) => setStockRange((prev) => ({ ...prev, min: e.target.value }))}
+                      onChange={(e) =>
+                        setStockRange((prev) => ({
+                          ...prev,
+                          min: e.target.value,
+                        }))
+                      }
                     />
                     <Input
                       placeholder="Stock máx"
                       type="number"
                       value={stockRange.max}
-                      onChange={(e) => setStockRange((prev) => ({ ...prev, max: e.target.value }))}
+                      onChange={(e) =>
+                        setStockRange((prev) => ({
+                          ...prev,
+                          max: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
                 <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
-                  Mostrando {filteredProducts.length} de {products.length} productos
+                  Mostrando {filteredProducts.length} de {products.length}{" "}
+                  productos
                 </div>
               </CardContent>
             </Card>
@@ -1106,12 +1508,17 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                   <div>
-                    <CardTitle className="text-lg sm:text-xl">Gestión de Productos</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">
+                      Gestión de Productos
+                    </CardTitle>
                     <CardDescription className="text-sm">
                       Administra tu inventario de bisutería artesanal
                     </CardDescription>
                   </div>
-                  <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+                  <Dialog
+                    open={isProductDialogOpen}
+                    onOpenChange={setIsProductDialogOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
                         <Plus className="w-4 h-4 mr-2" />
@@ -1121,7 +1528,9 @@ export default function AdminDashboard() {
                     <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
                       <DialogHeader>
                         <DialogTitle className="text-lg sm:text-xl">
-                          {editingProduct ? "Editar Producto" : "Nuevo Producto"}
+                          {editingProduct
+                            ? "Editar Producto"
+                            : "Nuevo Producto"}
                         </DialogTitle>
                         <DialogDescription className="text-sm">
                           {editingProduct
@@ -1130,10 +1539,15 @@ export default function AdminDashboard() {
                         </DialogDescription>
                       </DialogHeader>
                       <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
-                        <form onSubmit={handleSubmitProduct} className="space-y-4 sm:space-y-6">
+                        <form
+                          onSubmit={handleSubmitProduct}
+                          className="space-y-4 sm:space-y-6"
+                        >
                           {/* Información Básica */}
                           <div className="space-y-3 sm:space-y-4">
-                            <h3 className="text-base sm:text-lg font-medium">Información Básica</h3>
+                            <h3 className="text-base sm:text-lg font-medium">
+                              Información Básica
+                            </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                               <div>
                                 <Label htmlFor="name" className="text-sm">
@@ -1142,7 +1556,12 @@ export default function AdminDashboard() {
                                 <Input
                                   id="name"
                                   value={newProduct.name}
-                                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      name: e.target.value,
+                                    })
+                                  }
                                   required
                                   className="text-sm"
                                 />
@@ -1156,7 +1575,12 @@ export default function AdminDashboard() {
                                   type="number"
                                   step="0.01"
                                   value={newProduct.price}
-                                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      price: e.target.value,
+                                    })
+                                  }
                                   required
                                   className="text-sm"
                                 />
@@ -1170,14 +1594,22 @@ export default function AdminDashboard() {
                                 </Label>
                                 <Select
                                   value={newProduct.category}
-                                  onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
+                                  onValueChange={(value) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      category: value,
+                                    })
+                                  }
                                 >
                                   <SelectTrigger className="text-sm">
                                     <SelectValue placeholder="Seleccionar categoría" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {categories.map((category) => (
-                                      <SelectItem key={category.id} value={category.name}>
+                                      <SelectItem
+                                        key={category.id}
+                                        value={category.name}
+                                      >
                                         {category.name}
                                       </SelectItem>
                                     ))}
@@ -1185,12 +1617,20 @@ export default function AdminDashboard() {
                                 </Select>
                               </div>
                               <div>
-                                <Label htmlFor="availabilityType" className="text-sm">
+                                <Label
+                                  htmlFor="availabilityType"
+                                  className="text-sm"
+                                >
                                   Tipo de Disponibilidad *
                                 </Label>
                                 <Select
                                   value={newProduct.availabilityType}
-                                  onValueChange={(value) => setNewProduct({ ...newProduct, availabilityType: value })}
+                                  onValueChange={(value) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      availabilityType: value,
+                                    })
+                                  }
                                 >
                                   <SelectTrigger className="text-sm">
                                     <SelectValue />
@@ -1222,32 +1662,58 @@ export default function AdminDashboard() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                               <div>
                                 <Label htmlFor="stock" className="text-sm">
-                                  Stock {newProduct.availabilityType === "order_only" ? "(Opcional)" : "*"}
+                                  Stock{" "}
+                                  {newProduct.availabilityType === "order_only"
+                                    ? "(Opcional)"
+                                    : "*"}
                                 </Label>
                                 <Input
                                   id="stock"
                                   type="number"
                                   value={newProduct.stock}
-                                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                                  required={newProduct.availabilityType !== "order_only"}
-                                  disabled={newProduct.availabilityType === "order_only"}
-                                  placeholder={newProduct.availabilityType === "order_only" ? "0 (Sin stock)" : ""}
+                                  onChange={(e) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      stock: e.target.value,
+                                    })
+                                  }
+                                  required={
+                                    newProduct.availabilityType !== "order_only"
+                                  }
+                                  disabled={
+                                    newProduct.availabilityType === "order_only"
+                                  }
+                                  placeholder={
+                                    newProduct.availabilityType === "order_only"
+                                      ? "0 (Sin stock)"
+                                      : ""
+                                  }
                                   className="text-sm"
                                 />
                               </div>
                               <div>
-                                <Label htmlFor="estimatedDeliveryDays" className="text-sm">
+                                <Label
+                                  htmlFor="estimatedDeliveryDays"
+                                  className="text-sm"
+                                >
                                   Días de Entrega Estimados{" "}
-                                  {newProduct.availabilityType !== "stock_only" ? "*" : "(Opcional)"}
+                                  {newProduct.availabilityType !== "stock_only"
+                                    ? "*"
+                                    : "(Opcional)"}
                                 </Label>
                                 <Input
                                   id="estimatedDeliveryDays"
                                   type="number"
                                   value={newProduct.estimatedDeliveryDays}
                                   onChange={(e) =>
-                                    setNewProduct({ ...newProduct, estimatedDeliveryDays: e.target.value })
+                                    setNewProduct({
+                                      ...newProduct,
+                                      estimatedDeliveryDays: e.target.value,
+                                    })
                                   }
-                                  required={newProduct.availabilityType !== "stock_only"}
+                                  required={
+                                    newProduct.availabilityType !== "stock_only"
+                                  }
                                   placeholder="7"
                                   className="text-sm"
                                 />
@@ -1261,20 +1727,31 @@ export default function AdminDashboard() {
                               <Select
                                 value={newProduct.discountId || "none"}
                                 onValueChange={(value) =>
-                                  setNewProduct({ ...newProduct, discountId: value === "none" ? "" : value })
+                                  setNewProduct({
+                                    ...newProduct,
+                                    discountId: value === "none" ? "" : value,
+                                  })
                                 }
                               >
                                 <SelectTrigger className="text-sm">
                                   <SelectValue placeholder="Sin descuento" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="none">Sin descuento</SelectItem>
+                                  <SelectItem value="none">
+                                    Sin descuento
+                                  </SelectItem>
                                   {discounts
                                     .filter((discount) => discount.isActive)
                                     .map((discount) => (
-                                      <SelectItem key={discount.id} value={discount.id}>
+                                      <SelectItem
+                                        key={discount.id}
+                                        value={discount.id}
+                                      >
                                         {discount.name} (
-                                        {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value}`})
+                                        {discount.type === "percentage"
+                                          ? `${discount.value}%`
+                                          : `$${discount.value}`}
+                                        )
                                       </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -1288,7 +1765,12 @@ export default function AdminDashboard() {
                               <Textarea
                                 id="description"
                                 value={newProduct.description}
-                                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                                onChange={(e) =>
+                                  setNewProduct({
+                                    ...newProduct,
+                                    description: e.target.value,
+                                  })
+                                }
                                 required
                                 rows={3}
                                 className="text-sm"
@@ -1298,12 +1780,19 @@ export default function AdminDashboard() {
 
                           {/* Garantía */}
                           <div className="space-y-3 sm:space-y-4">
-                            <h3 className="text-base sm:text-lg font-medium">Garantía</h3>
+                            <h3 className="text-base sm:text-lg font-medium">
+                              Garantía
+                            </h3>
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="hasWarranty"
                                 checked={newProduct.hasWarranty}
-                                onCheckedChange={(checked) => setNewProduct({ ...newProduct, hasWarranty: checked })}
+                                onCheckedChange={(checked) =>
+                                  setNewProduct({
+                                    ...newProduct,
+                                    hasWarranty: checked as boolean,
+                                  })
+                                }
                               />
                               <Label htmlFor="hasWarranty" className="text-sm">
                                 Este producto tiene garantía
@@ -1313,33 +1802,53 @@ export default function AdminDashboard() {
                             {newProduct.hasWarranty && (
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                  <Label htmlFor="warrantyDuration" className="text-sm">
+                                  <Label
+                                    htmlFor="warrantyDuration"
+                                    className="text-sm"
+                                  >
                                     Duración de la Garantía *
                                   </Label>
                                   <Input
                                     id="warrantyDuration"
                                     type="number"
                                     value={newProduct.warrantyDuration}
-                                    onChange={(e) => setNewProduct({ ...newProduct, warrantyDuration: e.target.value })}
+                                    onChange={(e) =>
+                                      setNewProduct({
+                                        ...newProduct,
+                                        warrantyDuration: e.target.value,
+                                      })
+                                    }
                                     required={newProduct.hasWarranty}
                                     className="text-sm"
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor="warrantyUnit" className="text-sm">
+                                  <Label
+                                    htmlFor="warrantyUnit"
+                                    className="text-sm"
+                                  >
                                     Unidad *
                                   </Label>
                                   <Select
                                     value={newProduct.warrantyUnit}
-                                    onValueChange={(value) => setNewProduct({ ...newProduct, warrantyUnit: value })}
+                                    onValueChange={(value) =>
+                                      setNewProduct({
+                                        ...newProduct,
+                                        warrantyUnit: value,
+                                      })
+                                    }
                                   >
                                     <SelectTrigger className="text-sm">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="days">Días</SelectItem>
-                                      <SelectItem value="months">Meses</SelectItem>
-                                      <SelectItem value="years">Años</SelectItem>
+                                      <SelectItem value="months">
+                                        Meses
+                                      </SelectItem>
+                                      <SelectItem value="years">
+                                        Años
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -1349,12 +1858,19 @@ export default function AdminDashboard() {
 
                           {/* Política de Devoluciones */}
                           <div className="space-y-3 sm:space-y-4">
-                            <h3 className="text-base sm:text-lg font-medium">Política de Devoluciones</h3>
+                            <h3 className="text-base sm:text-lg font-medium">
+                              Política de Devoluciones
+                            </h3>
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="hasReturns"
                                 checked={newProduct.hasReturns}
-                                onCheckedChange={(checked) => setNewProduct({ ...newProduct, hasReturns: checked })}
+                                onCheckedChange={(checked) =>
+                                  setNewProduct({
+                                    ...newProduct,
+                                    hasReturns: checked as boolean,
+                                  })
+                                }
                               />
                               <Label htmlFor="hasReturns" className="text-sm">
                                 Este producto acepta devoluciones
@@ -1370,13 +1886,19 @@ export default function AdminDashboard() {
                                   id="returnDays"
                                   type="number"
                                   value={newProduct.returnDays}
-                                  onChange={(e) => setNewProduct({ ...newProduct, returnDays: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      returnDays: e.target.value,
+                                    })
+                                  }
                                   required={newProduct.hasReturns}
                                   placeholder="30"
                                   className="text-sm"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Número de días después de la compra en que se acepta la devolución
+                                  Número de días después de la compra en que se
+                                  acepta la devolución
                                 </p>
                               </div>
                             )}
@@ -1384,10 +1906,14 @@ export default function AdminDashboard() {
 
                           {/* Imágenes y Videos del Producto */}
                           <div className="space-y-3 sm:space-y-4">
-                            <h3 className="text-base sm:text-lg font-medium">Imágenes y Videos del Producto</h3>
+                            <h3 className="text-base sm:text-lg font-medium">
+                              Imágenes y Videos del Producto
+                            </h3>
                             <ImageUpload
                               images={newProduct.images}
-                              onImagesChange={(images) => setNewProduct({ ...newProduct, images })}
+                              onImagesChange={(images) =>
+                                setNewProduct({ ...newProduct, images })
+                              }
                               maxImages={8}
                               folder="products"
                               allowVideos={true}
@@ -1404,7 +1930,10 @@ export default function AdminDashboard() {
                             >
                               Cancelar
                             </Button>
-                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                            <Button
+                              type="submit"
+                              className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
+                            >
                               {editingProduct ? "Actualizar" : "Crear"} Producto
                             </Button>
                           </div>
@@ -1418,52 +1947,76 @@ export default function AdminDashboard() {
                 {/* Mobile Product Cards */}
                 <div className="block sm:hidden space-y-4">
                   {paginatedProducts.map((product) => {
-                    const discount = discounts.find((d) => d.id === product.discountId)
+                    const discount = discounts.find(
+                      (d) => d.id === product.discountId
+                    );
                     return (
                       <Card key={product.id} className="p-4">
                         <div className="flex space-x-3">
                           <img
-                            src={product.image || "/placeholder.svg"}
+                            src={product.images[0] || "/placeholder.svg"}
                             alt={product.name}
                             className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                                <p className="text-xs text-gray-600">{product.category}</p>
+                                <h3 className="font-medium text-sm truncate">
+                                  {product.name}
+                                </h3>
+                                <p className="text-xs text-gray-600">
+                                  {product.categoryName}
+                                </p>
                                 <div className="flex items-center space-x-1 mt-1">
-                                  {getAvailabilityIcon(product.availabilityType)}
+                                  {getAvailabilityIcon(
+                                    product.availabilityType
+                                  )}
                                   <span className="text-xs text-gray-500">
-                                    {getAvailabilityText(product.availabilityType)}
+                                    {getAvailabilityText(
+                                      product.availabilityType
+                                    )}
                                   </span>
                                 </div>
                               </div>
                               <div className="text-right ml-2">
-                                <p className="font-medium text-sm">${product.price.toFixed(2)}</p>
+                                <p className="font-medium text-sm">
+                                  ${product.price.toFixed(2)}
+                                </p>
                                 <Badge
-                                  variant={product.status === "active" ? "default" : "secondary"}
+                                  variant={
+                                    product.isActive ? "default" : "secondary"
+                                  }
                                   className="text-xs"
                                 >
-                                  {product.status === "active" ? "Activo" : "Inactivo"}
+                                  {product.isActive ? "Activo" : "Inactivo"}
                                 </Badge>
                               </div>
                             </div>
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditProduct(product)}
+                                >
                                   <Edit className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteProduct(product.id)}
+                                  onClick={() =>
+                                    handleDeleteProduct(product.id)
+                                  }
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
                               </div>
-                              <Button variant="ghost" size="sm" onClick={() => setViewingProduct(product)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setViewingProduct(product)}
+                              >
                                 <Eye className="w-3 h-3 mr-1" />
                                 Ver
                               </Button>
@@ -1471,7 +2024,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       </Card>
-                    )
+                    );
                   })}
                 </div>
 
@@ -1492,44 +2045,71 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {paginatedProducts.map((product) => {
-                        const discount = discounts.find((d) => d.id === product.discountId)
+                        const discount = discounts.find(
+                          (d) => d.id === product.discountId
+                        );
                         return (
-                          <TableRow key={product.id} className="cursor-pointer hover:bg-gray-50">
-                            <TableCell onClick={() => setViewingProduct(product)}>
+                          <TableRow
+                            key={product.id}
+                            className="cursor-pointer hover:bg-gray-50"
+                          >
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
                               <img
-                                src={product.image || "/placeholder.svg"}
+                                src={product.images[0] || "/placeholder.svg"}
                                 alt={product.name}
                                 className="w-12 h-12 object-cover rounded-lg"
                               />
                             </TableCell>
-                            <TableCell onClick={() => setViewingProduct(product)}>
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
                               <div>
                                 <p className="font-medium">{product.name}</p>
-                                <p className="text-sm text-gray-600 line-clamp-1">{product.category}</p>
+                                <p className="text-sm text-gray-600 line-clamp-1">
+                                  {product.categoryName}
+                                </p>
                                 {discount && (
-                                  <Badge variant="outline" className="text-xs text-green-600 border-green-600 mt-1">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs text-green-600 border-green-600 mt-1"
+                                  >
                                     {discount.name}
                                   </Badge>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell onClick={() => setViewingProduct(product)}>
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
                               <Badge variant="secondary" className="capitalize">
-                                {product.category}
+                                {product.categoryName}
                               </Badge>
                             </TableCell>
-                            <TableCell onClick={() => setViewingProduct(product)}>
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
                               <div className="flex items-center space-x-2">
                                 {getAvailabilityIcon(product.availabilityType)}
                                 <div>
-                                  <p className="text-sm font-medium">{getAvailabilityText(product.availabilityType)}</p>
-                                  {product.availabilityType !== "stock_only" && (
-                                    <p className="text-xs text-gray-500">{product.estimatedDeliveryDays} días</p>
+                                  <p className="text-sm font-medium">
+                                    {getAvailabilityText(
+                                      product.availabilityType
+                                    )}
+                                  </p>
+                                  {product.availabilityType !==
+                                    "stock_only" && (
+                                    <p className="text-xs text-gray-500">
+                                      {product.estimatedDeliveryDays} días
+                                    </p>
                                   )}
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell onClick={() => setViewingProduct(product)}>
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
                               <div className="font-medium">
                                 {discount ? (
                                   <div>
@@ -1552,31 +2132,54 @@ export default function AdminDashboard() {
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell onClick={() => setViewingProduct(product)}>
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
                               {product.availabilityType === "order_only" ? (
-                                <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                <Badge
+                                  variant="outline"
+                                  className="text-orange-600 border-orange-600"
+                                >
                                   Por Encargo
                                 </Badge>
                               ) : (
-                                <span className={product.stock < 10 ? "text-red-600 font-medium" : ""}>
+                                <span
+                                  className={
+                                    product.stock < 10
+                                      ? "text-red-600 font-medium"
+                                      : ""
+                                  }
+                                >
                                   {product.stock}
                                 </span>
                               )}
                             </TableCell>
-                            <TableCell onClick={() => setViewingProduct(product)}>
-                              <Badge variant={product.status === "active" ? "default" : "secondary"}>
-                                {product.status === "active" ? "Activo" : "Inactivo"}
+                            <TableCell
+                              onClick={() => setViewingProduct(product)}
+                            >
+                              <Badge
+                                variant={
+                                  product.isActive ? "default" : "secondary"
+                                }
+                              >
+                                {product.isActive ? "Activo" : "Inactivo"}
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditProduct(product)}
+                                >
                                   <Edit className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteProduct(product.id)}
+                                  onClick={() =>
+                                    handleDeleteProduct(product.id)
+                                  }
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -1584,7 +2187,7 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                           </TableRow>
-                        )
+                        );
                       })}
                     </TableBody>
                   </Table>
@@ -1594,14 +2197,23 @@ export default function AdminDashboard() {
                 <div className="flex flex-col sm:flex-row items-center justify-between mt-4 space-y-3 sm:space-y-0">
                   <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     <div className="text-xs sm:text-sm text-gray-600">
-                      Mostrando {startIndex + 1} a {Math.min(endIndex, filteredProducts.length)} de{" "}
+                      Mostrando {startIndex + 1} a{" "}
+                      {Math.min(endIndex, filteredProducts.length)} de{" "}
                       {filteredProducts.length} productos
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm">
+                      <Label
+                        htmlFor="itemsPerPage"
+                        className="text-xs sm:text-sm"
+                      >
                         Mostrar:
                       </Label>
-                      <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                      <Select
+                        value={itemsPerPage.toString()}
+                        onValueChange={(value) =>
+                          setItemsPerPage(Number(value))
+                        }
+                      >
                         <SelectTrigger className="w-16 sm:w-20">
                           <SelectValue />
                         </SelectTrigger>
@@ -1619,41 +2231,54 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                     >
                       Anterior
                     </Button>
                     <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let page
-                        if (totalPages <= 5) {
-                          page = i + 1
-                        } else if (currentPage <= 3) {
-                          page = i + 1
-                        } else if (currentPage >= totalPages - 2) {
-                          page = totalPages - 4 + i
-                        } else {
-                          page = currentPage - 2 + i
-                        }
+                      {Array.from(
+                        { length: Math.min(totalPages, 5) },
+                        (_, i) => {
+                          let page;
+                          if (totalPages <= 5) {
+                            page = i + 1;
+                          } else if (currentPage <= 3) {
+                            page = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            page = totalPages - 4 + i;
+                          } else {
+                            page = currentPage - 2 + i;
+                          }
 
-                        return (
-                          <Button
-                            key={page}
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(page)}
-                            className={currentPage === page ? "bg-rose-600 hover:bg-rose-700" : ""}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
+                          return (
+                            <Button
+                              key={page}
+                              variant={
+                                currentPage === page ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className={
+                                currentPage === page
+                                  ? "bg-rose-600 hover:bg-rose-700"
+                                  : ""
+                              }
+                            >
+                              {page}
+                            </Button>
+                          );
+                        }
+                      )}
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                     >
                       Siguiente
@@ -1664,16 +2289,21 @@ export default function AdminDashboard() {
             </Card>
 
             {/* Product View Dialog */}
-            <Dialog open={!!viewingProduct} onOpenChange={() => setViewingProduct(null)}>
+            <Dialog
+              open={!!viewingProduct}
+              onOpenChange={() => setViewingProduct(null)}
+            >
               <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
                 <DialogHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
-                    <DialogTitle className="text-lg sm:text-xl">{viewingProduct?.name}</DialogTitle>
+                    <DialogTitle className="text-lg sm:text-xl">
+                      {viewingProduct?.name}
+                    </DialogTitle>
                     <Button
                       onClick={() => {
                         if (viewingProduct) {
-                          handleEditProduct(viewingProduct)
-                          setViewingProduct(null)
+                          handleEditProduct(viewingProduct);
+                          setViewingProduct(null);
                         }
                       }}
                       className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
@@ -1690,7 +2320,9 @@ export default function AdminDashboard() {
                         <div>
                           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
                             <img
-                              src={viewingProduct.image || "/placeholder.svg"}
+                              src={
+                                viewingProduct.images[0] || "/placeholder.svg"
+                              }
                               alt={viewingProduct.name}
                               className="w-full h-full object-cover"
                             />
@@ -1699,56 +2331,86 @@ export default function AdminDashboard() {
 
                         <div className="space-y-3 sm:space-y-4">
                           <div>
-                            <h3 className="text-base sm:text-lg font-semibold mb-2">Información General</h3>
+                            <h3 className="text-base sm:text-lg font-semibold mb-2">
+                              Información General
+                            </h3>
                             <div className="space-y-2 text-sm">
                               <p>
-                                <strong>Precio:</strong> ${viewingProduct.price.toFixed(2)}
+                                <strong>Precio:</strong> $
+                                {viewingProduct.price.toFixed(2)}
                               </p>
                               <div className="flex items-center space-x-2">
                                 <strong>Disponibilidad:</strong>
-                                {getAvailabilityIcon(viewingProduct.availabilityType)}
-                                <span>{getAvailabilityText(viewingProduct.availabilityType)}</span>
+                                {getAvailabilityIcon(
+                                  viewingProduct.availabilityType
+                                )}
+                                <span>
+                                  {getAvailabilityText(
+                                    viewingProduct.availabilityType
+                                  )}
+                                </span>
                               </div>
-                              {viewingProduct.availabilityType !== "order_only" && (
+                              {viewingProduct.availabilityType !==
+                                "order_only" && (
                                 <p>
-                                  <strong>Stock:</strong> {viewingProduct.stock} unidades
+                                  <strong>Stock:</strong> {viewingProduct.stock}{" "}
+                                  unidades
                                 </p>
                               )}
                               {viewingProduct.estimatedDeliveryDays && (
                                 <p>
-                                  <strong>Tiempo de entrega:</strong> {viewingProduct.estimatedDeliveryDays} días
+                                  <strong>Tiempo de entrega:</strong>{" "}
+                                  {viewingProduct.estimatedDeliveryDays} días
                                 </p>
                               )}
                               <p>
-                                <strong>Categoría:</strong> {viewingProduct.category}
+                                <strong>Categoría:</strong>{" "}
+                                {viewingProduct.categoryName}
                               </p>
                               {viewingProduct.hasWarranty && (
                                 <p>
-                                  <strong>Garantía:</strong> {viewingProduct.warrantyDuration}{" "}
+                                  <strong>Garantía:</strong>{" "}
+                                  {viewingProduct.warrantyDuration}{" "}
                                   {viewingProduct.warrantyUnit}
                                 </p>
                               )}
                               {viewingProduct.discountId && (
                                 <div>
                                   <strong>Descuento:</strong>
-                                  <Badge variant="outline" className="ml-2 text-green-600 border-green-600">
-                                    {discounts.find((d) => d.id === viewingProduct.discountId)?.name}
+                                  <Badge
+                                    variant="outline"
+                                    className="ml-2 text-green-600 border-green-600"
+                                  >
+                                    {
+                                      discounts.find(
+                                        (d) =>
+                                          d.id === viewingProduct.discountId
+                                      )?.name
+                                    }
                                   </Badge>
                                 </div>
                               )}
                               <p>
                                 <strong>Estado:</strong>
                                 <Badge
-                                  variant={viewingProduct.status === "active" ? "default" : "secondary"}
+                                  variant={
+                                    viewingProduct.isActive
+                                      ? "default"
+                                      : "secondary"
+                                  }
                                   className="ml-2"
                                 >
-                                  {viewingProduct.status === "active" ? "Activo" : "Inactivo"}
+                                  {viewingProduct.isActive
+                                    ? "Activo"
+                                    : "Inactivo"}
                                 </Badge>
                               </p>
                               {viewingProduct.hasReturns && (
                                 <p>
-                                  <strong>Devoluciones:</strong> Acepta devoluciones hasta {viewingProduct.returnDays}{" "}
-                                  días después de la compra
+                                  <strong>Devoluciones:</strong> Acepta
+                                  devoluciones hasta{" "}
+                                  {viewingProduct.returnPeriodDays} días después
+                                  de la compra
                                 </p>
                               )}
                             </div>
@@ -1767,11 +2429,15 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Categorías</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total Categorías
+                  </CardTitle>
                   <Folder className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{categories.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {categories.length}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {categories.filter((c) => c.isActive).length} activas •{" "}
                     {categories.filter((c) => !c.isActive).length} inactivas
@@ -1781,38 +2447,51 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Tags</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total Tags
+                  </CardTitle>
                   <Hash className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{tags.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {tags.length}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {tags.filter((t) => t.isActive).length} activos • {tags.filter((t) => !t.isActive).length} inactivos
+                    {tags.filter((t) => t.isActive).length} activos •{" "}
+                    {tags.filter((t) => !t.isActive).length} inactivos
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Productos por Categoría</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Productos por Categoría
+                  </CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl sm:text-2xl font-bold">
                     {Math.round(products.length / categories.length) || 0}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">Promedio por categoría</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Promedio por categoría
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Más Popular</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Más Popular
+                  </CardTitle>
                   <Tag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-base sm:text-lg font-bold">Collares</div>
-                  <div className="text-xs text-muted-foreground mt-1">Categoría con más productos</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Categoría con más productos
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -1824,10 +2503,17 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                     <div>
-                      <CardTitle className="text-lg sm:text-xl">Categorías</CardTitle>
-                      <CardDescription className="text-sm">Organiza tus productos por categorías</CardDescription>
+                      <CardTitle className="text-lg sm:text-xl">
+                        Categorías
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        Organiza tus productos por categorías
+                      </CardDescription>
                     </div>
-                    <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                    <Dialog
+                      open={isCategoryDialogOpen}
+                      onOpenChange={setIsCategoryDialogOpen}
+                    >
                       <DialogTrigger asChild>
                         <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
                           <Plus className="w-4 h-4 mr-2" />
@@ -1837,13 +2523,20 @@ export default function AdminDashboard() {
                       <DialogContent className="w-[95vw] max-w-md">
                         <DialogHeader>
                           <DialogTitle className="text-lg">
-                            {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
+                            {editingCategory
+                              ? "Editar Categoría"
+                              : "Nueva Categoría"}
                           </DialogTitle>
                           <DialogDescription className="text-sm">
-                            {editingCategory ? "Modifica los datos de la categoría" : "Crea una nueva categoría"}
+                            {editingCategory
+                              ? "Modifica los datos de la categoría"
+                              : "Crea una nueva categoría"}
                           </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleSubmitCategory} className="space-y-4">
+                        <form
+                          onSubmit={handleSubmitCategory}
+                          className="space-y-4"
+                        >
                           <div>
                             <Label htmlFor="category-name" className="text-sm">
                               Nombre de la Categoría *
@@ -1851,20 +2544,33 @@ export default function AdminDashboard() {
                             <Input
                               id="category-name"
                               value={newCategory.name}
-                              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                              onChange={(e) =>
+                                setNewCategory({
+                                  ...newCategory,
+                                  name: e.target.value,
+                                })
+                              }
                               required
                               placeholder="Ej: Collares"
                               className="text-sm"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="category-description" className="text-sm">
+                            <Label
+                              htmlFor="category-description"
+                              className="text-sm"
+                            >
                               Descripción
                             </Label>
                             <Textarea
                               id="category-description"
                               value={newCategory.description}
-                              onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                              onChange={(e) =>
+                                setNewCategory({
+                                  ...newCategory,
+                                  description: e.target.value,
+                                })
+                              }
                               rows={3}
                               placeholder="Descripción de la categoría..."
                               className="text-sm"
@@ -1874,9 +2580,17 @@ export default function AdminDashboard() {
                             <Checkbox
                               id="category-active"
                               checked={newCategory.isActive}
-                              onCheckedChange={(checked) => setNewCategory({ ...newCategory, isActive: checked })}
+                              onCheckedChange={(checked) =>
+                                setNewCategory({
+                                  ...newCategory,
+                                  isActive: checked as boolean,
+                                })
+                              }
                             />
-                            <Label htmlFor="category-active" className="text-sm">
+                            <Label
+                              htmlFor="category-active"
+                              className="text-sm"
+                            >
                               Categoría activa
                             </Label>
                           </div>
@@ -1889,8 +2603,12 @@ export default function AdminDashboard() {
                             >
                               Cancelar
                             </Button>
-                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
-                              {editingCategory ? "Actualizar" : "Crear"} Categoría
+                            <Button
+                              type="submit"
+                              className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
+                            >
+                              {editingCategory ? "Actualizar" : "Crear"}{" "}
+                              Categoría
                             </Button>
                           </div>
                         </form>
@@ -1901,24 +2619,45 @@ export default function AdminDashboard() {
                 <CardContent>
                   <div className="space-y-3">
                     {categories.map((category) => (
-                      <div key={category.id} className="border rounded-lg p-3 sm:p-4">
+                      <div
+                        key={category.id}
+                        className="border rounded-lg p-3 sm:p-4"
+                      >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="font-semibold text-sm sm:text-base">{category.name}</h3>
-                              <Badge variant={category.isActive ? "default" : "secondary"} className="text-xs">
+                              <h3 className="font-semibold text-sm sm:text-base">
+                                {category.name}
+                              </h3>
+                              <Badge
+                                variant={
+                                  category.isActive ? "default" : "secondary"
+                                }
+                                className="text-xs"
+                              >
                                 {category.isActive ? "Activa" : "Inactiva"}
                               </Badge>
                             </div>
                             {category.description && (
-                              <p className="text-xs sm:text-sm text-gray-600 mb-2">{category.description}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                                {category.description}
+                              </p>
                             )}
                             <p className="text-xs text-gray-500">
-                              {products.filter((p) => p.category === category.name).length} producto(s)
+                              {
+                                products.filter(
+                                  (p) => p.categoryName === category.name
+                                ).length
+                              }{" "}
+                              producto(s)
                             </p>
                           </div>
                           <div className="flex space-x-1 ml-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditCategory(category)}
+                            >
                               <Edit className="w-3 h-3" />
                             </Button>
                             <Button
@@ -1937,7 +2676,9 @@ export default function AdminDashboard() {
                     {categories.length === 0 && (
                       <div className="text-center py-6 sm:py-8">
                         <Folder className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                        <p className="text-gray-500 text-sm sm:text-base font-medium">No hay categorías creadas</p>
+                        <p className="text-gray-500 text-sm sm:text-base font-medium">
+                          No hay categorías creadas
+                        </p>
                         <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
                           Crea tu primera categoría para organizar tus productos
                         </p>
@@ -1953,9 +2694,14 @@ export default function AdminDashboard() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                     <div>
                       <CardTitle className="text-lg sm:text-xl">Tags</CardTitle>
-                      <CardDescription className="text-sm">Etiquetas para clasificar productos</CardDescription>
+                      <CardDescription className="text-sm">
+                        Etiquetas para clasificar productos
+                      </CardDescription>
                     </div>
-                    <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
+                    <Dialog
+                      open={isTagDialogOpen}
+                      onOpenChange={setIsTagDialogOpen}
+                    >
                       <DialogTrigger asChild>
                         <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
                           <Plus className="w-4 h-4 mr-2" />
@@ -1964,9 +2710,13 @@ export default function AdminDashboard() {
                       </DialogTrigger>
                       <DialogContent className="w-[95vw] max-w-md">
                         <DialogHeader>
-                          <DialogTitle className="text-lg">{editingTag ? "Editar Tag" : "Nuevo Tag"}</DialogTitle>
+                          <DialogTitle className="text-lg">
+                            {editingTag ? "Editar Tag" : "Nuevo Tag"}
+                          </DialogTitle>
                           <DialogDescription className="text-sm">
-                            {editingTag ? "Modifica los datos del tag" : "Crea un nuevo tag"}
+                            {editingTag
+                              ? "Modifica los datos del tag"
+                              : "Crea un nuevo tag"}
                           </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSubmitTag} className="space-y-4">
@@ -1977,7 +2727,9 @@ export default function AdminDashboard() {
                             <Input
                               id="tag-name"
                               value={newTag.name}
-                              onChange={(e) => setNewTag({ ...newTag, name: e.target.value })}
+                              onChange={(e) =>
+                                setNewTag({ ...newTag, name: e.target.value })
+                              }
                               required
                               placeholder="Ej: elegante"
                               className="text-sm"
@@ -1992,12 +2744,22 @@ export default function AdminDashboard() {
                                 id="tag-color"
                                 type="color"
                                 value={newTag.color}
-                                onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
+                                onChange={(e) =>
+                                  setNewTag({
+                                    ...newTag,
+                                    color: e.target.value,
+                                  })
+                                }
                                 className="w-12 h-10 p-1 border rounded"
                               />
                               <Input
                                 value={newTag.color}
-                                onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
+                                onChange={(e) =>
+                                  setNewTag({
+                                    ...newTag,
+                                    color: e.target.value,
+                                  })
+                                }
                                 placeholder="#8B5CF6"
                                 className="text-sm"
                               />
@@ -2007,17 +2769,30 @@ export default function AdminDashboard() {
                             <Checkbox
                               id="tag-active"
                               checked={newTag.isActive}
-                              onCheckedChange={(checked) => setNewTag({ ...newTag, isActive: checked })}
+                              onCheckedChange={(checked) =>
+                                setNewTag({
+                                  ...newTag,
+                                  isActive: checked as boolean,
+                                })
+                              }
                             />
                             <Label htmlFor="tag-active" className="text-sm">
                               Tag activo
                             </Label>
                           </div>
                           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
-                            <Button type="button" variant="outline" onClick={resetTagForm} className="w-full sm:w-auto">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={resetTagForm}
+                              className="w-full sm:w-auto"
+                            >
                               Cancelar
                             </Button>
-                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
+                            <Button
+                              type="submit"
+                              className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
+                            >
                               {editingTag ? "Actualizar" : "Crear"} Tag
                             </Button>
                           </div>
@@ -2029,7 +2804,10 @@ export default function AdminDashboard() {
                 <CardContent>
                   <div className="space-y-3">
                     {tags.map((tag) => (
-                      <div key={tag.id} className="border rounded-lg p-3 sm:p-4">
+                      <div
+                        key={tag.id}
+                        className="border rounded-lg p-3 sm:p-4"
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div
@@ -2038,16 +2816,29 @@ export default function AdminDashboard() {
                             />
                             <div>
                               <div className="flex items-center space-x-2">
-                                <h3 className="font-semibold text-sm sm:text-base">#{tag.name}</h3>
-                                <Badge variant={tag.isActive ? "default" : "secondary"} className="text-xs">
+                                <h3 className="font-semibold text-sm sm:text-base">
+                                  #{tag.name}
+                                </h3>
+                                <Badge
+                                  variant={
+                                    tag.isActive ? "default" : "secondary"
+                                  }
+                                  className="text-xs"
+                                >
                                   {tag.isActive ? "Activo" : "Inactivo"}
                                 </Badge>
                               </div>
-                              <p className="text-xs text-gray-500">{tag.color}</p>
+                              <p className="text-xs text-gray-500">
+                                {tag.color}
+                              </p>
                             </div>
                           </div>
                           <div className="flex space-x-1">
-                            <Button variant="outline" size="sm" onClick={() => handleEditTag(tag)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditTag(tag)}
+                            >
                               <Edit className="w-3 h-3" />
                             </Button>
                             <Button
@@ -2066,7 +2857,9 @@ export default function AdminDashboard() {
                     {tags.length === 0 && (
                       <div className="text-center py-6 sm:py-8">
                         <Hash className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                        <p className="text-gray-500 text-sm sm:text-base font-medium">No hay tags creados</p>
+                        <p className="text-gray-500 text-sm sm:text-base font-medium">
+                          No hay tags creados
+                        </p>
                         <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
                           Crea tu primer tag para etiquetar productos
                         </p>
@@ -2083,48 +2876,70 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Total Descuentos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Total Descuentos
+                  </CardTitle>
                   <Percent className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{discounts.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {discounts.length}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {discounts.filter((d) => d.isActive).length} activos • {discounts.filter((d) => !d.isActive).length}{" "}
-                    inactivos
+                    {discounts.filter((d) => d.isActive).length} activos •{" "}
+                    {discounts.filter((d) => !d.isActive).length} inactivos
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Descuentos Genéricos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Descuentos Genéricos
+                  </CardTitle>
                   <Tag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{discounts.filter((d) => d.isGeneric).length}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Aplicables a cualquier producto</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {discounts.filter((d) => d.isGeneric).length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Aplicables a cualquier producto
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Descuentos Específicos</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Descuentos Específicos
+                  </CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{discounts.filter((d) => !d.isGeneric).length}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Para productos específicos</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {discounts.filter((d) => !d.isGeneric).length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Para productos específicos
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Productos con Descuento</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Productos con Descuento
+                  </CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{products.filter((p) => p.discountId).length}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Productos con descuento aplicado</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {products.filter((p) => p.discountId).length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Productos con descuento aplicado
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -2134,12 +2949,17 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                   <div>
-                    <CardTitle className="text-lg sm:text-xl">Gestión de Descuentos</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">
+                      Gestión de Descuentos
+                    </CardTitle>
                     <CardDescription className="text-sm">
                       Administra los descuentos y promociones de tu tienda
                     </CardDescription>
                   </div>
-                  <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
+                  <Dialog
+                    open={isDiscountDialogOpen}
+                    onOpenChange={setIsDiscountDialogOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
                         <Plus className="w-4 h-4 mr-2" />
@@ -2149,7 +2969,9 @@ export default function AdminDashboard() {
                     <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden">
                       <DialogHeader>
                         <DialogTitle className="text-lg sm:text-xl">
-                          {editingDiscount ? "Editar Descuento" : "Nuevo Descuento"}
+                          {editingDiscount
+                            ? "Editar Descuento"
+                            : "Nuevo Descuento"}
                         </DialogTitle>
                         <DialogDescription className="text-sm">
                           {editingDiscount
@@ -2158,32 +2980,53 @@ export default function AdminDashboard() {
                         </DialogDescription>
                       </DialogHeader>
                       <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
-                        <form onSubmit={handleSubmitDiscount} className="space-y-4 sm:space-y-6">
+                        <form
+                          onSubmit={handleSubmitDiscount}
+                          className="space-y-4 sm:space-y-6"
+                        >
                           {/* Información Básica */}
                           <div className="space-y-3 sm:space-y-4">
-                            <h3 className="text-base sm:text-lg font-medium">Información Básica</h3>
+                            <h3 className="text-base sm:text-lg font-medium">
+                              Información Básica
+                            </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                               <div>
-                                <Label htmlFor="discount-name" className="text-sm">
+                                <Label
+                                  htmlFor="discount-name"
+                                  className="text-sm"
+                                >
                                   Nombre del Descuento *
                                 </Label>
                                 <Input
                                   id="discount-name"
                                   value={newDiscount.name}
-                                  onChange={(e) => setNewDiscount({ ...newDiscount, name: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewDiscount({
+                                      ...newDiscount,
+                                      name: e.target.value,
+                                    })
+                                  }
                                   required
                                   placeholder="Ej: Descuento Primavera"
                                   className="text-sm"
                                 />
                               </div>
                               <div>
-                                <Label htmlFor="discount-reason" className="text-sm">
+                                <Label
+                                  htmlFor="discount-reason"
+                                  className="text-sm"
+                                >
                                   Razón del Descuento *
                                 </Label>
                                 <Input
                                   id="discount-reason"
                                   value={newDiscount.reason}
-                                  onChange={(e) => setNewDiscount({ ...newDiscount, reason: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewDiscount({
+                                      ...newDiscount,
+                                      reason: e.target.value,
+                                    })
+                                  }
                                   required
                                   placeholder="Ej: Promoción de temporada"
                                   className="text-sm"
@@ -2192,13 +3035,21 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                              <Label htmlFor="discount-description" className="text-sm">
+                              <Label
+                                htmlFor="discount-description"
+                                className="text-sm"
+                              >
                                 Descripción
                               </Label>
                               <Textarea
                                 id="discount-description"
                                 value={newDiscount.description}
-                                onChange={(e) => setNewDiscount({ ...newDiscount, description: e.target.value })}
+                                onChange={(e) =>
+                                  setNewDiscount({
+                                    ...newDiscount,
+                                    description: e.target.value,
+                                  })
+                                }
                                 rows={3}
                                 placeholder="Descripción detallada del descuento..."
                                 className="text-sm"
@@ -2207,34 +3058,65 @@ export default function AdminDashboard() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                               <div>
-                                <Label htmlFor="discount-type" className="text-sm">
+                                <Label
+                                  htmlFor="discount-type"
+                                  className="text-sm"
+                                >
                                   Tipo de Descuento *
                                 </Label>
                                 <Select
                                   value={newDiscount.type}
-                                  onValueChange={(value) => setNewDiscount({ ...newDiscount, type: value })}
+                                  onValueChange={(value) =>
+                                    setNewDiscount({
+                                      ...newDiscount,
+                                      type: value,
+                                    })
+                                  }
                                 >
                                   <SelectTrigger className="text-sm">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="percentage">Porcentaje (%)</SelectItem>
-                                    <SelectItem value="fixed">Cantidad Fija ($)</SelectItem>
+                                    <SelectItem value="percentage">
+                                      Porcentaje (%)
+                                    </SelectItem>
+                                    <SelectItem value="fixed">
+                                      Cantidad Fija ($)
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                               <div>
-                                <Label htmlFor="discount-value" className="text-sm">
-                                  Valor del Descuento * {newDiscount.type === "percentage" ? "(%)" : "($)"}
+                                <Label
+                                  htmlFor="discount-value"
+                                  className="text-sm"
+                                >
+                                  Valor del Descuento *{" "}
+                                  {newDiscount.type === "percentage"
+                                    ? "(%)"
+                                    : "($)"}
                                 </Label>
                                 <Input
                                   id="discount-value"
                                   type="number"
-                                  step={newDiscount.type === "percentage" ? "1" : "0.01"}
+                                  step={
+                                    newDiscount.type === "percentage"
+                                      ? "1"
+                                      : "0.01"
+                                  }
                                   value={newDiscount.value}
-                                  onChange={(e) => setNewDiscount({ ...newDiscount, value: e.target.value })}
+                                  onChange={(e) =>
+                                    setNewDiscount({
+                                      ...newDiscount,
+                                      value: e.target.value,
+                                    })
+                                  }
                                   required
-                                  placeholder={newDiscount.type === "percentage" ? "15" : "10.00"}
+                                  placeholder={
+                                    newDiscount.type === "percentage"
+                                      ? "15"
+                                      : "10.00"
+                                  }
                                   className="text-sm"
                                 />
                               </div>
@@ -2245,10 +3127,16 @@ export default function AdminDashboard() {
                                 <Checkbox
                                   id="isGeneric"
                                   checked={newDiscount.isGeneric}
-                                  onCheckedChange={(checked) => setNewDiscount({ ...newDiscount, isGeneric: checked })}
+                                  onCheckedChange={(checked) =>
+                                    setNewDiscount({
+                                      ...newDiscount,
+                                      isGeneric: checked as boolean,
+                                    })
+                                  }
                                 />
                                 <Label htmlFor="isGeneric" className="text-sm">
-                                  Descuento genérico (aplicable a cualquier producto)
+                                  Descuento genérico (aplicable a cualquier
+                                  producto)
                                 </Label>
                               </div>
 
@@ -2256,7 +3144,12 @@ export default function AdminDashboard() {
                                 <Checkbox
                                   id="isActive"
                                   checked={newDiscount.isActive}
-                                  onCheckedChange={(checked) => setNewDiscount({ ...newDiscount, isActive: checked })}
+                                  onCheckedChange={(checked) =>
+                                    setNewDiscount({
+                                      ...newDiscount,
+                                      isActive: checked as boolean,
+                                    })
+                                  }
                                 />
                                 <Label htmlFor="isActive" className="text-sm">
                                   Descuento activo
@@ -2268,17 +3161,27 @@ export default function AdminDashboard() {
                           {/* Fechas de Vigencia */}
                           {!newDiscount.isGeneric && (
                             <div className="space-y-3 sm:space-y-4">
-                              <h3 className="text-base sm:text-lg font-medium">Fechas de Vigencia</h3>
+                              <h3 className="text-base sm:text-lg font-medium">
+                                Fechas de Vigencia
+                              </h3>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
-                                  <Label htmlFor="startDate" className="text-sm">
+                                  <Label
+                                    htmlFor="startDate"
+                                    className="text-sm"
+                                  >
                                     Fecha de Inicio
                                   </Label>
                                   <Input
                                     id="startDate"
                                     type="date"
                                     value={newDiscount.startDate}
-                                    onChange={(e) => setNewDiscount({ ...newDiscount, startDate: e.target.value })}
+                                    onChange={(e) =>
+                                      setNewDiscount({
+                                        ...newDiscount,
+                                        startDate: e.target.value,
+                                      })
+                                    }
                                     className="text-sm"
                                   />
                                 </div>
@@ -2290,7 +3193,12 @@ export default function AdminDashboard() {
                                     id="endDate"
                                     type="date"
                                     value={newDiscount.endDate}
-                                    onChange={(e) => setNewDiscount({ ...newDiscount, endDate: e.target.value })}
+                                    onChange={(e) =>
+                                      setNewDiscount({
+                                        ...newDiscount,
+                                        endDate: e.target.value,
+                                      })
+                                    }
                                     className="text-sm"
                                   />
                                 </div>
@@ -2301,23 +3209,39 @@ export default function AdminDashboard() {
                           {/* Productos Aplicables */}
                           {!newDiscount.isGeneric && (
                             <div className="space-y-3 sm:space-y-4">
-                              <h3 className="text-base sm:text-lg font-medium">Productos Aplicables</h3>
+                              <h3 className="text-base sm:text-lg font-medium">
+                                Productos Aplicables
+                              </h3>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-60 overflow-y-auto border rounded-lg p-3 sm:p-4">
                                 {products.map((product) => (
-                                  <div key={product.id} className="flex items-center space-x-2">
+                                  <div
+                                    key={product.id}
+                                    className="flex items-center space-x-2"
+                                  >
                                     <Checkbox
                                       id={`product-${product.id}`}
-                                      checked={newDiscount.productIds.includes(product.id)}
-                                      onCheckedChange={() => handleProductToggleForDiscount(product.id)}
+                                      checked={newDiscount.productIds.includes(
+                                        product.id
+                                      )}
+                                      onCheckedChange={() =>
+                                        handleProductToggleForDiscount(
+                                          product.id
+                                        )
+                                      }
                                     />
-                                    <Label htmlFor={`product-${product.id}`} className="text-xs sm:text-sm">
-                                      {product.name} - ${product.price.toFixed(2)}
+                                    <Label
+                                      htmlFor={`product-${product.id}`}
+                                      className="text-xs sm:text-sm"
+                                    >
+                                      {product.name} - $
+                                      {product.price.toFixed(2)}
                                     </Label>
                                   </div>
                                 ))}
                               </div>
                               <p className="text-xs sm:text-sm text-gray-600">
-                                Seleccionados: {newDiscount.productIds.length} producto(s)
+                                Seleccionados: {newDiscount.productIds.length}{" "}
+                                producto(s)
                               </p>
                             </div>
                           )}
@@ -2331,8 +3255,12 @@ export default function AdminDashboard() {
                             >
                               Cancelar
                             </Button>
-                            <Button type="submit" className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto">
-                              {editingDiscount ? "Actualizar" : "Crear"} Descuento
+                            <Button
+                              type="submit"
+                              className="bg-rose-600 hover:bg-rose-700 w-full sm:w-auto"
+                            >
+                              {editingDiscount ? "Actualizar" : "Crear"}{" "}
+                              Descuento
                             </Button>
                           </div>
                         </form>
@@ -2344,41 +3272,64 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-3 sm:space-y-4">
                   {discounts.map((discount) => (
-                    <div key={discount.id} className="border rounded-lg p-3 sm:p-4">
+                    <div
+                      key={discount.id}
+                      className="border rounded-lg p-3 sm:p-4"
+                    >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-sm sm:text-base">{discount.name}</h3>
-                            <Badge variant={discount.isActive ? "default" : "secondary"} className="text-xs">
+                            <h3 className="font-semibold text-sm sm:text-base">
+                              {discount.name}
+                            </h3>
+                            <Badge
+                              variant={
+                                discount.isActive ? "default" : "secondary"
+                              }
+                              className="text-xs"
+                            >
                               {discount.isActive ? "Activo" : "Inactivo"}
                             </Badge>
                             {discount.isGeneric && (
-                              <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">
+                              <Badge
+                                variant="outline"
+                                className="text-blue-600 border-blue-600 text-xs"
+                              >
                                 Genérico
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs sm:text-sm text-gray-600 mb-1">{discount.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                            {discount.description}
+                          </p>
                           <p className="text-xs sm:text-sm text-gray-500">
                             <strong>Razón:</strong> {discount.reason}
                           </p>
-                          {!discount.isGeneric && discount.startDate && discount.endDate && (
-                            <p className="text-xs sm:text-sm text-gray-500">
-                              <strong>Vigencia:</strong> {discount.startDate} - {discount.endDate}
-                            </p>
-                          )}
+                          {!discount.isGeneric &&
+                            discount.startDate &&
+                            discount.endDate && (
+                              <p className="text-xs sm:text-sm text-gray-500">
+                                <strong>Vigencia:</strong> {discount.startDate}{" "}
+                                - {discount.endDate}
+                              </p>
+                            )}
                           {!discount.isGeneric && (
                             <p className="text-xs sm:text-sm text-gray-500">
-                              <strong>Productos:</strong> {discount.productIds.length} producto(s)
+                              <strong>Productos:</strong>{" "}
+                              {discount.productIds.length} producto(s)
                             </p>
                           )}
                         </div>
                         <div className="text-left sm:text-right">
                           <div className="text-xl sm:text-2xl font-bold text-green-600">
-                            {discount.type === "percentage" ? `${discount.value}%` : `$${discount.value.toFixed(2)}`}
+                            {discount.type === "percentage"
+                              ? `${discount.value}%`
+                              : `$${discount.value.toFixed(2)}`}
                           </div>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {discount.type === "percentage" ? "Descuento" : "Descuento fijo"}
+                            {discount.type === "percentage"
+                              ? "Descuento"
+                              : "Descuento fijo"}
                           </p>
                         </div>
                       </div>
@@ -2409,9 +3360,12 @@ export default function AdminDashboard() {
                   {discounts.length === 0 && (
                     <div className="text-center py-6 sm:py-8">
                       <Percent className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                      <p className="text-gray-500 text-sm sm:text-base font-medium">No hay descuentos creados</p>
+                      <p className="text-gray-500 text-sm sm:text-base font-medium">
+                        No hay descuentos creados
+                      </p>
                       <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm">
-                        Crea tu primer descuento para empezar a ofrecer promociones
+                        Crea tu primer descuento para empezar a ofrecer
+                        promociones
                       </p>
                     </div>
                   )}
@@ -2423,7 +3377,9 @@ export default function AdminDashboard() {
           <TabsContent value="settings" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Configuración de la Tienda</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">
+                  Configuración de la Tienda
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6">
                 {/* Configuración de Envíos */}
@@ -2434,7 +3390,9 @@ export default function AdminDashboard() {
                       <Label htmlFor="shipping" className="text-sm">
                         Envíos Habilitados
                       </Label>
-                      <p className="text-xs sm:text-sm text-gray-600">Permitir envíos a domicilio</p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        Permitir envíos a domicilio
+                      </p>
                     </div>
                     <Switch id="shipping" />
                   </div>
@@ -2461,7 +3419,9 @@ export default function AdminDashboard() {
                       <Label htmlFor="payment" className="text-sm">
                         Pagos en Línea Habilitados
                       </Label>
-                      <p className="text-xs sm:text-sm text-gray-600">Permitir pagos con tarjeta en línea</p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        Permitir pagos con tarjeta en línea
+                      </p>
                     </div>
                     <Switch id="payment" />
                   </div>
@@ -2482,13 +3442,17 @@ export default function AdminDashboard() {
 
                 {/* Configuración de Impuestos */}
                 <div className="space-y-3 sm:space-y-4">
-                  <h3 className="text-base sm:text-lg font-medium">Impuestos</h3>
+                  <h3 className="text-base sm:text-lg font-medium">
+                    Impuestos
+                  </h3>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
                     <div>
                       <Label htmlFor="tax" className="text-sm">
                         Impuestos Habilitados
                       </Label>
-                      <p className="text-xs sm:text-sm text-gray-600">Aplicar impuestos a las compras</p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        Aplicar impuestos a las compras
+                      </p>
                     </div>
                     <Switch id="tax" />
                   </div>
@@ -2497,13 +3461,23 @@ export default function AdminDashboard() {
                       <Label htmlFor="tax-name" className="text-sm">
                         Nombre del Impuesto
                       </Label>
-                      <Input id="tax-name" placeholder="IVA" className="text-sm" />
+                      <Input
+                        id="tax-name"
+                        placeholder="IVA"
+                        className="text-sm"
+                      />
                     </div>
                     <div>
                       <Label htmlFor="tax-rate" className="text-sm">
                         Tasa de Impuesto (%)
                       </Label>
-                      <Input id="tax-rate" type="number" step="0.01" placeholder="16" className="text-sm" />
+                      <Input
+                        id="tax-rate"
+                        type="number"
+                        step="0.01"
+                        placeholder="16"
+                        className="text-sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -2518,7 +3492,9 @@ export default function AdminDashboard() {
                       <Label htmlFor="notifications" className="text-sm">
                         Notificaciones por Email
                       </Label>
-                      <p className="text-xs sm:text-sm text-gray-600">Recibir notificaciones de nuevos pedidos</p>
+                      <p className="text-xs sm:text-sm text-gray-600">
+                        Recibir notificaciones de nuevos pedidos
+                      </p>
                     </div>
                     <Switch id="notifications" />
                   </div>
@@ -2534,5 +3510,5 @@ export default function AdminDashboard() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

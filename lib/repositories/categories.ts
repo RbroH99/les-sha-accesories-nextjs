@@ -1,40 +1,42 @@
-import { db } from "@/lib/db"
-import { categories, tags } from "@/lib/schema"
-import { eq } from "drizzle-orm"
-import type { Category, Tag } from "@/contexts/categories-context"
+import { db } from "@/lib/db";
+import { categories, tags } from "@/lib/schema";
+import { eq } from "drizzle-orm";
+import type { Category, ProductTag } from "@/contexts/categories-context";
 
 export class CategoriesRepository {
   // Categorías
   async getAllCategories(): Promise<Category[]> {
     try {
-      const result = await db.select().from(categories)
+      const result = await db.select().from(categories);
       return result.map((cat) => ({
         id: cat.id,
         name: cat.name,
         description: cat.description || undefined,
         isActive: cat.isActive,
         createdAt: cat.createdAt.toISOString(),
-      }))
+      }));
     } catch (error) {
-      console.error("Error fetching categories:", error)
+      console.error("Error fetching categories:", error);
       // Fallback a datos en memoria para propósito demostrativo
-      return this.getMemoryCategories()
+      return this.getMemoryCategories();
     }
   }
 
-  async createCategory(data: Omit<Category, "id" | "createdAt">): Promise<string> {
+  async createCategory(
+    data: Omit<Category, "id" | "createdAt">
+  ): Promise<string> {
     try {
-      const id = `cat_${Date.now()}`
+      const id = `cat_${Date.now()}`;
       await db.insert(categories).values({
         id,
         name: data.name,
         description: data.description,
         isActive: data.isActive,
-      })
-      return id
+      });
+      return id;
     } catch (error) {
-      console.error("Error creating category:", error)
-      throw new Error("Failed to create category")
+      console.error("Error creating category:", error);
+      throw new Error("Failed to create category");
     }
   }
 
@@ -47,59 +49,59 @@ export class CategoriesRepository {
           description: data.description,
           isActive: data.isActive,
         })
-        .where(eq(categories.id, id))
-      return true
+        .where(eq(categories.id, id));
+      return true;
     } catch (error) {
-      console.error("Error updating category:", error)
-      return false
+      console.error("Error updating category:", error);
+      return false;
     }
   }
 
   async deleteCategory(id: string): Promise<boolean> {
     try {
-      await db.delete(categories).where(eq(categories.id, id))
-      return true
+      await db.delete(categories).where(eq(categories.id, id));
+      return true;
     } catch (error) {
-      console.error("Error deleting category:", error)
-      return false
+      console.error("Error deleting category:", error);
+      return false;
     }
   }
 
   // Tags
-  async getAllTags(): Promise<Tag[]> {
+  async getAllTags(): Promise<ProductTag[]> {
     try {
-      const result = await db.select().from(tags)
+      const result = await db.select().from(tags);
       return result.map((tag) => ({
         id: tag.id,
         name: tag.name,
         color: tag.color,
         isActive: tag.isActive,
         createdAt: tag.createdAt.toISOString(),
-      }))
+      }));
     } catch (error) {
-      console.error("Error fetching tags:", error)
+      console.error("Error fetching tags:", error);
       // Fallback a datos en memoria para propósito demostrativo
-      return this.getMemoryTags()
+      return this.getMemoryTags();
     }
   }
 
-  async createTag(data: Omit<Tag, "id" | "createdAt">): Promise<string> {
+  async createTag(data: Omit<ProductTag, "id" | "createdAt">): Promise<string> {
     try {
-      const id = `tag_${Date.now()}`
+      const id = `tag_${Date.now()}`;
       await db.insert(tags).values({
         id,
         name: data.name,
         color: data.color,
         isActive: data.isActive,
-      })
-      return id
+      });
+      return id;
     } catch (error) {
-      console.error("Error creating tag:", error)
-      throw new Error("Failed to create tag")
+      console.error("Error creating tag:", error);
+      throw new Error("Failed to create tag");
     }
   }
 
-  async updateTag(id: string, data: Partial<Tag>): Promise<boolean> {
+  async updateTag(id: string, data: Partial<ProductTag>): Promise<boolean> {
     try {
       await db
         .update(tags)
@@ -108,21 +110,21 @@ export class CategoriesRepository {
           color: data.color,
           isActive: data.isActive,
         })
-        .where(eq(tags.id, id))
-      return true
+        .where(eq(tags.id, id));
+      return true;
     } catch (error) {
-      console.error("Error updating tag:", error)
-      return false
+      console.error("Error updating tag:", error);
+      return false;
     }
   }
 
   async deleteTag(id: string): Promise<boolean> {
     try {
-      await db.delete(tags).where(eq(tags.id, id))
-      return true
+      await db.delete(tags).where(eq(tags.id, id));
+      return true;
     } catch (error) {
-      console.error("Error deleting tag:", error)
-      return false
+      console.error("Error deleting tag:", error);
+      return false;
     }
   }
 
@@ -157,17 +159,41 @@ export class CategoriesRepository {
         isActive: true,
         createdAt: new Date().toISOString(),
       },
-    ]
+    ];
   }
 
-  private getMemoryTags(): Tag[] {
+  private getMemoryTags(): ProductTag[] {
     return [
-      { id: "tag_1", name: "elegante", color: "#8B5CF6", isActive: true, createdAt: new Date().toISOString() },
-      { id: "tag_2", name: "casual", color: "#10B981", isActive: true, createdAt: new Date().toISOString() },
-      { id: "tag_3", name: "vintage", color: "#F59E0B", isActive: true, createdAt: new Date().toISOString() },
-      { id: "tag_4", name: "moderno", color: "#EF4444", isActive: true, createdAt: new Date().toISOString() },
-    ]
+      {
+        id: "tag_1",
+        name: "elegante",
+        color: "#8B5CF6",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "tag_2",
+        name: "casual",
+        color: "#10B981",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "tag_3",
+        name: "vintage",
+        color: "#F59E0B",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "tag_4",
+        name: "moderno",
+        color: "#EF4444",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      },
+    ];
   }
 }
 
-export const categoriesRepository = new CategoriesRepository()
+export const categoriesRepository = new CategoriesRepository();

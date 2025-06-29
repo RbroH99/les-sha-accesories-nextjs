@@ -1,0 +1,1 @@
+ALTER TABLE "products" ALTER COLUMN "id" SET DATA TYPE varchar(50);

@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1750973440531,
+      "tag": "0000_tiny_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1750979843752,
+      "tag": "0001_cold_skaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751081562680,
+      "tag": "0002_little_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1751134735837,
+      "tag": "0003_striped_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1751135113161,
+      "tag": "0004_odd_impossible_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1751135313072,
+      "tag": "0005_deep_sunset_bain",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1751135808951,
+      "tag": "0006_sour_vanisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1751136112976,
+      "tag": "0007_dashing_doctor_octopus",
+      "breakpoints": true
+    }
+  ]
+}

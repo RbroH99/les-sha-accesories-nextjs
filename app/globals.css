@@ -57,6 +57,29 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+
+  /* Custom theme variables */
+  [data-theme] {
+    --background: 0 0% 100%;
+    --foreground: var(--foreground);
+    --card: 0 0% 100%;
+    --card-foreground: var(--foreground);
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--foreground);
+    --primary: var(--primary);
+    --primary-foreground: 210 40% 98%;
+    --secondary: var(--secondary);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--muted);
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: var(--accent);
+    --accent-foreground: var(--foreground);
+    --destructive: var(--destructive);
+    --destructive-foreground: 210 40% 98%;
+    --border: var(--border);
+    --input: var(--border);
+    --ring: var(--primary);
+  }
 }
 
 @layer base {
@@ -68,20 +91,24 @@
   }
 }
 
-.font-playfair {
-  font-family: var(--font-playfair);
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-.line-clamp-1 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
-.line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }

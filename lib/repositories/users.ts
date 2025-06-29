@@ -1,34 +1,40 @@
-import { db } from "@/lib/db"
-import { users } from "@/lib/schema"
-import { eq } from "drizzle-orm"
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface UserData {
-  id: string
-  username: string
-  firstName?: string
-  lastName?: string
-  email: string
-  phone?: string
-  role: "user" | "admin"
+  id: string;
+  username: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  phone?: string;
+  role: "user" | "admin";
   defaultAddress?: {
-    address: string
-    city: string
-    state: string
-    zipCode: string
-    country: string
-  }
-  createdAt: string
-  updatedAt: string
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export class UsersRepository {
   async getUserById(id: string): Promise<UserData | null> {
     try {
-      const result = await db.select().from(users).where(eq(users.id, id)).limit(1)
+      const result = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
 
-      if (result.length === 0) return null
+      if (result.length === 0) return null;
 
-      const user = result[0]
+      const user = result[0];
       return {
         id: user.id,
         username: user.username,
@@ -40,20 +46,24 @@ export class UsersRepository {
         defaultAddress: user.defaultAddress || undefined,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
-      }
+      };
     } catch (error) {
-      console.error("Error fetching user by id:", error)
-      return this.getMemoryUserById(id)
+      console.error("Error fetching user by id:", error);
+      return this.getMemoryUserById(id);
     }
   }
 
   async getUserByEmail(email: string): Promise<UserData | null> {
     try {
-      const result = await db.select().from(users).where(eq(users.email, email)).limit(1)
+      const result = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
 
-      if (result.length === 0) return null
+      if (result.length === 0) return null;
 
-      const user = result[0]
+      const user = result[0];
       return {
         id: user.id,
         username: user.username,
@@ -65,17 +75,27 @@ export class UsersRepository {
         defaultAddress: user.defaultAddress || undefined,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
-      }
+      };
     } catch (error) {
-      console.error("Error fetching user by email:", error)
-      return this.getMemoryUserByEmail(email)
+      console.error("Error fetching user by email:", error);
+      return this.getMemoryUserByEmail(email);
     }
   }
 
-  async createUser(data: Omit<UserData, "createdAt" | "updatedAt">): Promise<string> {
+  async createUser(
+    data: Omit<UserData, "createdAt" | "updatedAt">
+  ): Promise<string> {
     try {
+      const DEFAULT_PASSWORD = "12345678";
+
+      const hashedPassword = await bcrypt.hash(
+        data.password ? data.password : DEFAULT_PASSWORD,
+        10
+      );
+
       await db.insert(users).values({
         id: data.id,
+        password: hashedPassword,
         username: data.username,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -83,11 +103,11 @@ export class UsersRepository {
         phone: data.phone,
         role: data.role,
         defaultAddress: data.defaultAddress,
-      })
-      return data.id
+      });
+      return data.id;
     } catch (error) {
-      console.error("Error creating user:", error)
-      throw new Error("Failed to create user")
+      console.error("Error creating user:", error);
+      throw new Error("Failed to create user");
     }
   }
 
@@ -102,23 +122,23 @@ export class UsersRepository {
           phone: data.phone,
           defaultAddress: data.defaultAddress,
         })
-        .where(eq(users.id, id))
-      return true
+        .where(eq(users.id, id));
+      return true;
     } catch (error) {
-      console.error("Error updating user:", error)
-      return false
+      console.error("Error updating user:", error);
+      return false;
     }
   }
 
   // Métodos de fallback con datos en memoria
   private getMemoryUserById(id: string): UserData | null {
-    const memoryUsers = this.getMemoryUsers()
-    return memoryUsers.find((u) => u.id === id) || null
+    const memoryUsers = this.getMemoryUsers();
+    return memoryUsers.find((u) => u.id === id) || null;
   }
 
   private getMemoryUserByEmail(email: string): UserData | null {
-    const memoryUsers = this.getMemoryUsers()
-    return memoryUsers.find((u) => u.email === email) || null
+    const memoryUsers = this.getMemoryUsers();
+    return memoryUsers.find((u) => u.email === email) || null;
   }
 
   private getMemoryUsers(): UserData[] {
@@ -141,8 +161,8 @@ export class UsersRepository {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
-    ]
+    ];
   }
 }
 
-export const usersRepository = new UsersRepository()
+export const usersRepository = new UsersRepository();

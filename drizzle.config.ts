@@ -1,10 +1,12 @@
-import type { Config } from "drizzle-kit"
+import { config } from "dotenv";
+import { defineConfig } from "drizzle-kit";
+config({ path: ".env.local" });
 
-export default {
-  schema: "./lib/schema.ts",
-  out: "./drizzle",
-  driver: "mysql2",
+export default defineConfig({
+  schema: "./lib/schema.ts", // Ruta a tu esquema
+  out: "./drizzle", // Carpeta de migraciones
+  dialect: "postgresql", // Dialecto
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL!, // URL de conexión a Neon en .env
   },
-} satisfies Config
+});
