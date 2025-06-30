@@ -35,7 +35,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/contexts/categories-context";
 import { useDiscounts } from "@/contexts/discounts-context";
-import { ProductDetail } from "@/lib/products-data";
+import { ProductDetail } from "@/lib/repositories/products";
 import { getOptimizedImageUrl } from "@/lib/imagekit-client";
 
 const sortOptions = [
@@ -427,7 +427,11 @@ export default function TiendaPage() {
                       <Checkbox
                         id="discounted"
                         checked={showDiscounted}
-                        onCheckedChange={setShowDiscounted}
+                        onCheckedChange={(checked) => {
+                          if (checked !== "indeterminate") {
+                            setShowDiscounted(checked);
+                          }
+                        }}
                       />
                       <Label htmlFor="discounted" className="text-sm">
                         Solo productos con descuento
@@ -438,7 +442,11 @@ export default function TiendaPage() {
                       <Checkbox
                         id="withImages"
                         checked={showWithImages}
-                        onCheckedChange={setShowWithImages}
+                        onCheckedChange={(checked) => {
+                          if (checked !== "indeterminate") {
+                            setShowWithImages(checked);
+                          }
+                        }}
                       />
                       <Label
                         htmlFor="withImages"
@@ -606,7 +614,11 @@ export default function TiendaPage() {
                         <Checkbox
                           id="mobile-discounted"
                           checked={showDiscounted}
-                          onCheckedChange={setShowDiscounted}
+                          onCheckedChange={(checked) => {
+                            if (checked !== "indeterminate") {
+                              setShowDiscounted(checked);
+                            }
+                          }}
                         />
                         <Label htmlFor="mobile-discounted" className="text-sm">
                           Solo productos con descuento
@@ -617,7 +629,11 @@ export default function TiendaPage() {
                         <Checkbox
                           id="mobile-withImages"
                           checked={showWithImages}
-                          onCheckedChange={setShowWithImages}
+                          onCheckedChange={(checked) => {
+                            if (checked !== "indeterminate") {
+                              setShowWithImages(checked);
+                            }
+                          }}
                         />
                         <Label
                           htmlFor="mobile-withImages"
@@ -891,48 +907,6 @@ export default function TiendaPage() {
                 })}
               </div>
             )}
-
-            {loading ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="group border-0 shadow-md bg-white">
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden rounded-t-lg">
-                        <div className="w-full h-64 bg-gray-100 flex items-center justify-center animate-pulse"></div>
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="h-5 w-24 bg-gray-200 rounded animate-pulse"></div>
-                          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
-                        <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-5/6 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
-                          <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : products.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">
-                  No se encontraron productos que coincidan con tu búsqueda.
-                </p>
-                {activeFiltersCount > 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={clearFilters}
-                    className="mt-4"
-                  >
-                    Limpiar filtros
-                  </Button>
-                )}
-              </div>
-            ) : null}
           </div>
         </div>
       </div>

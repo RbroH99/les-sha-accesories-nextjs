@@ -3,6 +3,31 @@ import { products, categories, productTags } from "@/lib/schema";
 import { eq, and, inArray, like, gte, lte, desc, asc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
+export interface ProductDetail {
+  id: string;
+  name: string;
+  description: string;
+  story: string | null;
+  price: number;
+  images: string[];
+  categoryId: string;
+  categoryName?: string;
+  materials: string[] | null;
+  dimensions: string | null;
+  care: string | null;
+  stock: number;
+  availabilityType: "stock_only" | "stock_and_order" | "order_only";
+  estimatedDeliveryDays: number | null;
+  hasReturns: boolean;
+  returnPeriodDays: number;
+  isNew: boolean;
+  isActive: boolean;
+  hasWarranty: boolean;
+  warrantyDuration: number | null;
+  warrantyUnit: "days" | "months" | "years" | null;
+  discountId: string | null;
+}
+
 export interface ProductWithRelations {
   id: string;
   name: string;

@@ -30,7 +30,7 @@ import { useFavorites } from "@/contexts/favorites-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useSettings } from "@/contexts/settings-context";
 import { useToast } from "@/hooks/use-toast";
-import { type ProductDetail } from "@/lib/products-data";
+import { type ProductDetail } from "@/lib/repositories/products";
 import { getOptimizedImageUrl } from "@/lib/imagekit-client";
 import { useCategories } from "@/contexts/categories-context";
 

@@ -64,12 +64,15 @@ import { CardDescription } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme, type CustomTheme } from "@/contexts/theme-context";
 
-import { useCallback } from "react";
-import { ProductDetail } from "@/lib/products-data";
-import { Order, OrderStatus } from "@/contexts/orders-context";
-import { Discount } from "@/contexts/discounts-context";
-import { Category, ProductTag } from "@/contexts/categories-context";
+import { OrderStatus, useOrders } from "@/contexts/orders-context";
+import { Discount, useDiscounts } from "@/contexts/discounts-context";
+import {
+  Category,
+  ProductTag,
+  useCategories,
+} from "@/contexts/categories-context";
 import { AnyForeignKeyBuilder } from "drizzle-orm/gel-core";
+import { ProductDetail } from "@/lib/repositories/products";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -81,18 +84,34 @@ export default function AdminDashboard() {
     setTheme,
   } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { orders, loadingOrders, updateOrderStatus, deleteOrder } = useOrders();
   const [products, setProducts] = useState<ProductDetail[]>([]);
-  const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<ProductTag[]>([]);
+  const {
+    discounts,
+    loadingDiscounts,
+    createDiscount,
+    updateDiscount,
+    deleteDiscount,
+  } = useDiscounts();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [loadingDiscounts, setLoadingDiscounts] = useState(true);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [loadingTags, setLoadingTags] = useState(true);
+  const {
+    categories,
+    tags,
+    loadingCategories,
+    loadingTags,
+    fetchCategories,
+    fetchTags,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    createTag,
+    updateTag,
+    deleteTag,
+    getTagById,
+    getCategoryById,
+  } = useCategories();
 
   // Theme form state
   const [newTheme, setNewTheme] = useState({
@@ -143,7 +162,7 @@ export default function AdminDashboard() {
     endDate: "",
     isActive: true,
     isGeneric: false,
-    productIds: [] as number[],
+    productIds: [] as string[],
   });
 
   // Category form state
@@ -187,61 +206,27 @@ export default function AdminDashboard() {
 
   const itemsPerPageOptions = [5, 10, 20, 50];
 
-  const fetchAllData = useCallback(async () => {
-    setLoadingOrders(true);
-    setLoadingProducts(true);
-    setLoadingDiscounts(true);
-    setLoadingCategories(true);
-    setLoadingTags(true);
-
-    try {
-      const [ordersRes, productsRes, discountsRes, categoriesRes, tagsRes] =
-        await Promise.all([
-          fetch("/api/orders"),
-          fetch("/api/products"),
-          fetch("/api/discounts"),
-          fetch("/api/categories"),
-          fetch("/api/tags"),
-        ]);
-
-      const [
-        ordersData,
-        productsData,
-        discountsData,
-        categoriesData,
-        tagsData,
-      ] = await Promise.all([
-        ordersRes.json(),
-        productsRes.json(),
-        discountsRes.json(),
-        categoriesRes.json(),
-        tagsRes.json(),
-      ]);
-
-      setOrders(ordersData);
-      setProducts(productsData);
-      setDiscounts(discountsData);
-      setCategories(categoriesData);
-      setTags(tagsData);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos del dashboard.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingOrders(false);
-      setLoadingProducts(false);
-      setLoadingDiscounts(false);
-      setLoadingCategories(false);
-      setLoadingTags(false);
-    }
-  }, [toast]);
-
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    const fetchProducts = async () => {
+      setLoadingProducts(true);
+      try {
+        const productsRes = await fetch("/api/products");
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los productos.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, [toast]);
 
   // Filter products
   useEffect(() => {
@@ -446,7 +431,7 @@ export default function AdminDashboard() {
     setIsThemeDialogOpen(true);
   };
 
-  const handleDeleteProduct = async (id: number) => {
+  const handleDeleteProduct = async (id: string) => {
     try {
       const response = await fetch(`/api/products/${id}`, {
         method: "DELETE",
@@ -457,7 +442,7 @@ export default function AdminDashboard() {
           title: "Producto eliminado",
           description: "El producto se eliminó correctamente",
         });
-        fetchAllData();
+        setProducts((prev) => prev.filter((p) => p.id !== id));
       } else {
         toast({
           title: "Error",
@@ -476,90 +461,15 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteDiscount = async (id: string) => {
-    try {
-      const response = await fetch(`/api/discounts/${id}`, {
-        method: "DELETE",
-      });
-      const result = await response.json();
-      if (response.ok) {
-        toast({
-          title: "Descuento eliminado",
-          description: "El descuento se eliminó correctamente",
-        });
-        fetchAllData();
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Error al eliminar descuento",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting discount:", error);
-      toast({
-        title: "Error",
-        description: "Error de red al eliminar descuento",
-        variant: "destructive",
-      });
-    }
+    await deleteDiscount(id);
   };
 
   const handleDeleteCategory = async (id: string) => {
-    try {
-      const response = await fetch(`/api/categories/${id}`, {
-        method: "DELETE",
-      });
-      const result = await response.json();
-      if (response.ok) {
-        toast({
-          title: "Categoría eliminada",
-          description: "La categoría se eliminó correctamente",
-        });
-        fetchAllData();
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Error al eliminar categoría",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      toast({
-        title: "Error",
-        description: "Error de red al eliminar categoría",
-        variant: "destructive",
-      });
-    }
+    await deleteCategory(id);
   };
 
   const handleDeleteTag = async (id: string) => {
-    try {
-      const response = await fetch(`/api/tags/${id}`, {
-        method: "DELETE",
-      });
-      const result = await response.json();
-      if (response.ok) {
-        toast({
-          title: "Tag eliminado",
-          description: "El tag se eliminó correctamente",
-        });
-        fetchAllData();
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Error al eliminar tag",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting tag:", error);
-      toast({
-        title: "Error",
-        description: "Error de red al eliminar tag",
-        variant: "destructive",
-      });
-    }
+    await deleteTag(id);
   };
 
   const handleDeleteTheme = (id: string) => {
@@ -668,16 +578,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    toast({
-      title: "Estado actualizado",
-      description: `El pedido ${orderId} ha sido actualizado a ${newStatus}`,
-    });
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: OrderStatus
+  ) => {
+    await updateOrderStatus(orderId, newStatus);
   };
 
   const handleAddProduct = async () => {
@@ -724,7 +629,7 @@ export default function AdminDashboard() {
 
     try {
       let response;
-      let result;
+      let result: any;
       if (editingProduct) {
         response = await fetch(`/api/products/${editingProduct.id}`, {
           method: "PUT",
@@ -737,7 +642,11 @@ export default function AdminDashboard() {
             title: "Producto actualizado",
             description: "El producto se actualizó correctamente",
           });
-          fetchAllData(); // Re-fetch all data to update the list
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.id === editingProduct.id ? { ...p, ...result.product } : p
+            )
+          );
         } else {
           toast({
             title: "Error",
@@ -757,7 +666,7 @@ export default function AdminDashboard() {
             title: "Producto agregado",
             description: "El producto ha sido agregado exitosamente",
           });
-          fetchAllData(); // Re-fetch all data to update the list
+          setProducts((prev) => [...prev, result.product]);
         } else {
           toast({
             title: "Error",
@@ -792,68 +701,27 @@ export default function AdminDashboard() {
     const discountData = {
       name: newDiscount.name,
       description: newDiscount.description,
-      type: newDiscount.type,
+      type: newDiscount.type as "percentage" | "fixed",
       value: Number.parseFloat(newDiscount.value),
       reason: newDiscount.reason,
-      startDate: newDiscount.startDate || null,
-      endDate: newDiscount.endDate || null,
+      startDate: newDiscount.startDate || undefined,
+      endDate: newDiscount.endDate || undefined,
       isActive: newDiscount.isActive,
       isGeneric: newDiscount.isGeneric,
-      // productIds are handled separately if needed, not directly in discount creation/update
+      productIds: newDiscount.productIds.map(String),
     };
 
-    try {
-      let response;
-      let result;
-      if (editingDiscount) {
-        response = await fetch(`/api/discounts/${editingDiscount.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(discountData),
-        });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Descuento actualizado",
-            description: "El descuento se actualizó correctamente",
-          });
-          fetchAllData();
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al actualizar descuento",
-            variant: "destructive",
-          });
-        }
-      } else {
-        response = await fetch("/api/discounts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(discountData),
-        });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Descuento creado",
-            description: "El descuento ha sido creado exitosamente",
-          });
-          fetchAllData();
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al crear descuento",
-            variant: "destructive",
-          });
-        }
+    let success = false;
+    if (editingDiscount) {
+      success = await updateDiscount(editingDiscount.id, discountData);
+    } else {
+      const newId = await createDiscount(discountData);
+      if (newId) {
+        success = true;
       }
-    } catch (error) {
-      console.error("Error saving discount:", error);
-      toast({
-        title: "Error",
-        description: "Error de red al guardar descuento",
-        variant: "destructive",
-      });
-    } finally {
+    }
+
+    if (success) {
       resetDiscountForm();
     }
   };
@@ -874,58 +742,17 @@ export default function AdminDashboard() {
       isActive: newCategory.isActive,
     };
 
-    try {
-      let response;
-      let result;
-      if (editingCategory) {
-        response = await fetch(`/api/categories/${editingCategory.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(categoryData),
-        });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Categoría actualizada",
-            description: "La categoría se actualizó correctamente",
-          });
-          fetchAllData();
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al actualizar categoría",
-            variant: "destructive",
-          });
-        }
-      } else {
-        response = await fetch("/api/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(categoryData),
-        });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Categoría creada",
-            description: "La categoría ha sido creada exitosamente",
-          });
-          fetchAllData();
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al crear categoría",
-            variant: "destructive",
-          });
-        }
+    let success = false;
+    if (editingCategory) {
+      success = await updateCategory(editingCategory.id, categoryData);
+    } else {
+      const newId = await createCategory(categoryData);
+      if (newId) {
+        success = true;
       }
-    } catch (error) {
-      console.error("Error saving category:", error);
-      toast({
-        title: "Error",
-        description: "Error de red al guardar categoría",
-        variant: "destructive",
-      });
-    } finally {
+    }
+
+    if (success) {
       resetCategoryForm();
     }
   };
@@ -946,58 +773,17 @@ export default function AdminDashboard() {
       isActive: newTag.isActive,
     };
 
-    try {
-      let response;
-      let result;
-      if (editingTag) {
-        response = await fetch(`/api/tags/${editingTag.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tagData),
-        });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Tag actualizado",
-            description: "El tag se actualizó correctamente",
-          });
-          fetchAllData();
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al actualizar tag",
-            variant: "destructive",
-          });
-        }
-      } else {
-        response = await fetch("/api/tags", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tagData),
-        });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Tag creado",
-            description: "El tag ha sido creado exitosamente",
-          });
-          fetchAllData();
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al crear tag",
-            variant: "destructive",
-          });
-        }
+    let success = false;
+    if (editingTag) {
+      success = await updateTag(editingTag.id, tagData);
+    } else {
+      const newId = await createTag(tagData);
+      if (newId) {
+        success = true;
       }
-    } catch (error) {
-      console.error("Error saving tag:", error);
-      toast({
-        title: "Error",
-        description: "Error de red al guardar tag",
-        variant: "destructive",
-      });
-    } finally {
+    }
+
+    if (success) {
       resetTagForm();
     }
   };
@@ -1029,7 +815,7 @@ export default function AdminDashboard() {
     resetThemeForm();
   };
 
-  const handleProductToggleForDiscount = (productId: number) => {
+  const handleProductToggleForDiscount = (productId: string) => {
     setNewDiscount((prev) => {
       const productIds = [...prev.productIds];
       const index = productIds.indexOf(productId);

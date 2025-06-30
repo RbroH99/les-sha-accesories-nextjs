@@ -14,11 +14,11 @@ export class CategoriesRepository {
         description: cat.description || undefined,
         isActive: cat.isActive,
         createdAt: cat.createdAt.toISOString(),
+        updatedAt: cat.updatedAt.toISOString(), // ✅ necesario
       }));
     } catch (error) {
       console.error("Error fetching categories:", error);
-      // Fallback a datos en memoria para propósito demostrativo
-      return this.getMemoryCategories();
+      return [];
     }
   }
 
@@ -77,11 +77,11 @@ export class CategoriesRepository {
         color: tag.color,
         isActive: tag.isActive,
         createdAt: tag.createdAt.toISOString(),
+        updatedAt: tag.updatedAt.toISOString(), // ✅ necesario
       }));
     } catch (error) {
       console.error("Error fetching tags:", error);
-      // Fallback a datos en memoria para propósito demostrativo
-      return this.getMemoryTags();
+      return [];
     }
   }
 
@@ -126,73 +126,6 @@ export class CategoriesRepository {
       console.error("Error deleting tag:", error);
       return false;
     }
-  }
-
-  // Métodos de fallback con datos en memoria
-  private getMemoryCategories(): Category[] {
-    return [
-      {
-        id: "cat_1",
-        name: "collares",
-        description: "Collares artesanales únicos y elegantes",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "cat_2",
-        name: "aretes",
-        description: "Aretes delicados y llamativos para toda ocasión",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "cat_3",
-        name: "pulseras",
-        description: "Pulseras cómodas y hermosas hechas a mano",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "cat_4",
-        name: "accesorios",
-        description: "Anillos, broches y otros accesorios especiales",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-  }
-
-  private getMemoryTags(): ProductTag[] {
-    return [
-      {
-        id: "tag_1",
-        name: "elegante",
-        color: "#8B5CF6",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "tag_2",
-        name: "casual",
-        color: "#10B981",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "tag_3",
-        name: "vintage",
-        color: "#F59E0B",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "tag_4",
-        name: "moderno",
-        color: "#EF4444",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      },
-    ];
   }
 }
 

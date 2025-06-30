@@ -1,38 +1,47 @@
-import { db } from "@/lib/db"
-import { orders, orderItems } from "@/lib/schema"
-import { eq, desc } from "drizzle-orm"
+import { db } from "@/lib/db";
+import { orders, orderItems } from "@/lib/schema";
+import { eq, desc } from "drizzle-orm";
 
 export interface OrderData {
-  id: string
-  userId: string
-  customerName: string
-  customerEmail: string
-  customerPhone?: string
+  id: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
   shippingAddress?: {
-    address: string
-    city: string
-    state: string
-    zipCode: string
-    country: string
-  }
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
   items: {
-    id: number
-    name: string
-    price: number
-    quantity: number
-    image: string
-  }[]
-  totalAmount: number
-  status: "pendiente" | "aceptado" | "en_proceso" | "enviado" | "entregado" | "cancelado"
-  notes?: string
-  createdAt: string
-  updatedAt: string
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image: string;
+  }[];
+  totalAmount: number;
+  status:
+    | "pendiente"
+    | "aceptado"
+    | "en_proceso"
+    | "enviado"
+    | "entregado"
+    | "cancelado";
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export class OrdersRepository {
   async getAllOrders(): Promise<OrderData[]> {
     try {
-      const ordersResult = await db.select().from(orders).orderBy(desc(orders.createdAt))
+      const ordersResult = await db
+        .select()
+        .from(orders)
+        .orderBy(desc(orders.createdAt));
 
       const ordersWithItems = await Promise.all(
         ordersResult.map(async (order) => {
@@ -45,7 +54,7 @@ export class OrdersRepository {
               image: orderItems.image,
             })
             .from(orderItems)
-            .where(eq(orderItems.orderId, order.id))
+            .where(eq(orderItems.orderId, order.id));
 
           return {
             id: order.id,
@@ -66,14 +75,14 @@ export class OrdersRepository {
             notes: order.notes || undefined,
             createdAt: order.createdAt.toISOString(),
             updatedAt: order.updatedAt.toISOString(),
-          }
-        }),
-      )
+          };
+        })
+      );
 
-      return ordersWithItems
+      return ordersWithItems;
     } catch (error) {
-      console.error("Error fetching orders:", error)
-      return this.getMemoryOrders()
+      console.error("Error fetching orders:", error);
+      return this.getMemoryOrders();
     }
   }
 
@@ -83,7 +92,7 @@ export class OrdersRepository {
         .select()
         .from(orders)
         .where(eq(orders.userId, userId))
-        .orderBy(desc(orders.createdAt))
+        .orderBy(desc(orders.createdAt));
 
       const ordersWithItems = await Promise.all(
         ordersResult.map(async (order) => {
@@ -96,7 +105,7 @@ export class OrdersRepository {
               image: orderItems.image,
             })
             .from(orderItems)
-            .where(eq(orderItems.orderId, order.id))
+            .where(eq(orderItems.orderId, order.id));
 
           return {
             id: order.id,
@@ -117,18 +126,20 @@ export class OrdersRepository {
             notes: order.notes || undefined,
             createdAt: order.createdAt.toISOString(),
             updatedAt: order.updatedAt.toISOString(),
-          }
-        }),
-      )
+          };
+        })
+      );
 
-      return ordersWithItems
+      return ordersWithItems;
     } catch (error) {
-      console.error("Error fetching user orders:", error)
-      return this.getMemoryOrders().filter((order) => order.userId === userId)
+      console.error("Error fetching user orders:", error);
+      return this.getMemoryOrders().filter((order) => order.userId === userId);
     }
   }
 
-  async createOrder(data: Omit<OrderData, "createdAt" | "updatedAt">): Promise<string> {
+  async createOrder(
+    data: Omit<OrderData, "createdAt" | "updatedAt">
+  ): Promise<string> {
     try {
       // Insertar orden
       await db.insert(orders).values({
@@ -141,7 +152,7 @@ export class OrdersRepository {
         totalAmount: data.totalAmount.toString(),
         status: data.status,
         notes: data.notes,
-      })
+      });
 
       // Insertar items de la orden
       if (data.items.length > 0) {
@@ -153,34 +164,41 @@ export class OrdersRepository {
             price: item.price.toString(),
             quantity: item.quantity,
             image: item.image,
-          })),
-        )
+          }))
+        );
       }
 
-      return data.id
+      return data.id;
     } catch (error) {
-      console.error("Error creating order:", error)
-      throw new Error("Failed to create order")
+      console.error("Error creating order:", error);
+      throw new Error("Failed to create order");
     }
   }
 
-  async updateOrderStatus(orderId: string, status: OrderData["status"]): Promise<boolean> {
+  async updateOrderStatus(
+    orderId: string,
+    status: OrderData["status"]
+  ): Promise<boolean> {
     try {
-      await db.update(orders).set({ status }).where(eq(orders.id, orderId))
-      return true
+      await db.update(orders).set({ status }).where(eq(orders.id, orderId));
+      return true;
     } catch (error) {
-      console.error("Error updating order status:", error)
-      return false
+      console.error("Error updating order status:", error);
+      return false;
     }
   }
 
   async getOrderById(orderId: string): Promise<OrderData | null> {
     try {
-      const orderResult = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1)
+      const orderResult = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
 
-      if (orderResult.length === 0) return null
+      if (orderResult.length === 0) return null;
 
-      const order = orderResult[0]
+      const order = orderResult[0];
       const items = await db
         .select({
           id: orderItems.productId,
@@ -190,7 +208,7 @@ export class OrdersRepository {
           image: orderItems.image,
         })
         .from(orderItems)
-        .where(eq(orderItems.orderId, order.id))
+        .where(eq(orderItems.orderId, order.id));
 
       return {
         id: order.id,
@@ -211,17 +229,30 @@ export class OrdersRepository {
         notes: order.notes || undefined,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
-      }
+      };
     } catch (error) {
-      console.error("Error fetching order by id:", error)
-      return this.getMemoryOrders().find((order) => order.id === orderId) || null
+      console.error("Error fetching order by id:", error);
+      return (
+        this.getMemoryOrders().find((order) => order.id === orderId) || null
+      );
+    }
+  }
+
+  async deleteOrder(orderId: string): Promise<boolean> {
+    try {
+      await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
+      await db.delete(orders).where(eq(orders.id, orderId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      return false;
     }
   }
 
   // Método de fallback con datos en memoria
   private getMemoryOrders(): OrderData[] {
-    return [] // Por ahora vacío, se puede llenar con datos de ejemplo
+    return []; // Por ahora vacío, se puede llenar con datos de ejemplo
   }
 }
 
-export const ordersRepository = new OrdersRepository()
+export const ordersRepository = new OrdersRepository();
