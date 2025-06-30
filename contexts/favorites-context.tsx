@@ -6,8 +6,10 @@ import {
   useState,
   useEffect,
   type ReactNode,
+  useCallback,
 } from "react";
 import { useAuth } from "./auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 export interface FavoriteItem {
   id: string;
@@ -19,60 +21,98 @@ export interface FavoriteItem {
 
 interface FavoritesContextType {
   favorites: FavoriteItem[];
-  addToFavorites: (item: FavoriteItem) => void;
-  removeFromFavorites: (id: string) => void;
+  loading: boolean;
+  addToFavorites: (item: FavoriteItem) => Promise<void>;
+  removeFromFavorites: (id: string) => Promise<void>;
   isFavorite: (id: string) => boolean;
-  toggleFavorite: (item: FavoriteItem) => void;
+  toggleFavorite: (item: FavoriteItem) => Promise<void>;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | null>(null);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Cargar favoritos del usuario cuando se autentica
-  useEffect(() => {
-    if (user) {
-      const savedFavorites = localStorage.getItem(`favorites_${user.id}`);
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
-    } else {
-      // Si no hay usuario, limpiar favoritos
+  const fetchFavorites = useCallback(async () => {
+    if (!user) {
       setFavorites([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/favorites");
+      if (response.ok) {
+        const data = await response.json();
+        // This assumes the API returns product details, not just IDs
+        // If not, an additional fetch would be needed here
+        setFavorites(data.map((fav: any) => ({ ...fav.product, id: fav.productId })));
+      } else {
+        setFavorites([]);
+      }
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      setFavorites([]);
+    } finally {
+      setLoading(false);
     }
   }, [user]);
 
-  // Guardar favoritos cuando cambien
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(`favorites_${user.id}`, JSON.stringify(favorites));
-    }
-  }, [favorites, user]);
+    fetchFavorites();
+  }, [fetchFavorites]);
 
-  const addToFavorites = (item: FavoriteItem) => {
-    setFavorites((prev) => {
-      if (prev.find((fav) => fav.id === item.id)) {
-        return prev;
+  const addToFavorites = async (item: FavoriteItem) => {
+    if (!user) return;
+    try {
+      const response = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: item.id }),
+      });
+      if (response.ok) {
+        setFavorites((prev) => [...prev, item]);
+        toast({
+          title: "Agregado a favoritos",
+          description: `${item.name} se agregó a tus favoritos`,
+        });
       }
-      return [...prev, item];
-    });
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+    }
   };
 
-  const removeFromFavorites = (id: string) => {
-    setFavorites((prev) => prev.filter((fav) => fav.id !== id));
+  const removeFromFavorites = async (id: string) => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/favorites/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setFavorites((prev) => prev.filter((fav) => fav.id !== id));
+        toast({
+          title: "Eliminado de favoritos",
+          description: `El producto se eliminó de tus favoritos`,
+        });
+      }
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+    }
   };
 
   const isFavorite = (id: string) => {
     return favorites.some((fav) => fav.id === id);
   };
 
-  const toggleFavorite = (item: FavoriteItem) => {
+  const toggleFavorite = async (item: FavoriteItem) => {
     if (isFavorite(item.id)) {
-      removeFromFavorites(item.id);
+      await removeFromFavorites(item.id);
     } else {
-      addToFavorites(item);
+      await addToFavorites(item);
     }
   };
 
@@ -80,6 +120,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     <FavoritesContext.Provider
       value={{
         favorites,
+        loading,
         addToFavorites,
         removeFromFavorites,
         isFavorite,

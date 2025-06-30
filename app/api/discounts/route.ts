@@ -8,8 +8,8 @@ const discountSchema = z.object({
   type: z.enum(["percentage", "fixed"]),
   value: z.number(),
   reason: z.string(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
   isActive: z.boolean(),
   productIds: z.array(z.string()),
   isGeneric: z.boolean(),
@@ -21,7 +21,10 @@ export async function GET() {
     return NextResponse.json(discounts);
   } catch (error) {
     console.error("Error fetching discounts:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -31,20 +34,26 @@ export async function POST(request: Request) {
     const parsedData = discountSchema.safeParse(data);
 
     if (!parsedData.success) {
-      return NextResponse.json({ error: "Invalid data", details: parsedData.error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid data", details: parsedData.error.errors },
+        { status: 400 }
+      );
     }
 
     const discountId = await discountsRepository.createDiscount({
       ...parsedData.data,
-      id: "", // ID is generated in the repository
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
-    
+
     // The repository doesn't return the created object, so we can't return it here.
     // We'll just return the ID.
     return NextResponse.json({ id: discountId }, { status: 201 });
   } catch (error) {
     console.error("Error creating discount:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

@@ -269,7 +269,7 @@ export class ProductsRepository {
         story: data.story,
         price: data.price.toString(),
         categoryId: data.categoryId,
-        images: data.images.length > 0 ? data.images : [], // Permitir array vacío
+        images: data.images?.length > 0 ? data.images : [], // Permitir array vacío
         materials: data.materials,
         dimensions: data.dimensions,
         care: data.care,
@@ -285,7 +285,7 @@ export class ProductsRepository {
       });
 
       // Insertar tags del producto
-      if (data.tagIds.length > 0) {
+      if (data.tagIds?.length > 0) {
         await db.insert(productTags).values(
           data.tagIds.map((tagId) => ({
             productId: productId,
@@ -316,7 +316,7 @@ export class ProductsRepository {
           categoryId: data.categoryId,
           images:
             data.images !== undefined
-              ? data.images.length > 0
+              ? data.images?.length > 0
                 ? data.images
                 : []
               : undefined, // Permitir array vacío

@@ -23,16 +23,24 @@ export class CategoriesRepository {
   }
 
   async createCategory(
-    data: Omit<Category, "id" | "createdAt">
+    data: Omit<Category, "id" | "createdAt" | "updatedAt">
   ): Promise<string> {
     try {
       const id = `cat_${Date.now()}`;
-      await db.insert(categories).values({
+      const now = new Date();
+
+      const values = {
         id,
         name: data.name,
         description: data.description,
         isActive: data.isActive,
-      });
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      console.log("INSERTING CATEGORY:", values); // 👈 Esto te dirá qué estás enviando
+
+      await db.insert(categories).values(values);
       return id;
     } catch (error) {
       console.error("Error creating category:", error);
@@ -48,6 +56,7 @@ export class CategoriesRepository {
           name: data.name,
           description: data.description,
           isActive: data.isActive,
+          updatedAt: new Date(),
         })
         .where(eq(categories.id, id));
       return true;
@@ -93,6 +102,8 @@ export class CategoriesRepository {
         name: data.name,
         color: data.color,
         isActive: data.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
       return id;
     } catch (error) {
@@ -109,6 +120,7 @@ export class CategoriesRepository {
           name: data.name,
           color: data.color,
           isActive: data.isActive,
+          updatedAt: new Date(),
         })
         .where(eq(tags.id, id));
       return true;

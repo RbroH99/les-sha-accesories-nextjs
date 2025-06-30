@@ -7,8 +7,10 @@ import {
   useReducer,
   useEffect,
   type ReactNode,
+  useCallback,
 } from "react";
 import { useAuth } from "./auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 export interface CartItem {
   id: string;
@@ -17,160 +19,181 @@ export interface CartItem {
   image: string;
   quantity: number;
   category: string;
+  productId: string;
 }
 
 interface CartState {
   items: CartItem[];
   total: number;
+  loading: boolean;
+  cartId: string | null;
 }
 
 type CartAction =
-  | { type: "ADD_ITEM"; payload: Omit<CartItem, "quantity"> }
-  | { type: "REMOVE_ITEM"; payload: string }
-  | { type: "UPDATE_QUANTITY"; payload: { id: string; quantity: number } }
-  | { type: "CLEAR_CART" }
-  | { type: "LOAD_CART"; payload: CartItem[] };
+  | { type: "SET_LOADING"; payload: boolean }
+  | { type: "SET_CART"; payload: { id: string; items: any[] } }
+  | { type: "CLEAR_CART" };
 
 const CartContext = createContext<{
   state: CartState;
-  dispatch: React.Dispatch<CartAction>;
-  addItem: (item: Omit<CartItem, "quantity">) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  clearCart: () => void;
+  addItem: (item: Omit<CartItem, "quantity" | "productId"> & { id: string }) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   items: CartItem[];
   total: number;
+  loading: boolean;
 } | null>(null);
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
-    case "LOAD_CART": {
-      const items = action.payload;
+    case "SET_LOADING":
+      return { ...state, loading: action.payload };
+    case "SET_CART":
+      const items = action.payload.items.map((item: any) => ({
+        id: item.id,
+        productId: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        image: item.product.images[0] || "/placeholder.svg",
+        quantity: item.quantity,
+        category: item.product.categoryId,
+      }));
       return {
+        ...state,
+        cartId: action.payload.id,
         items,
         total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        loading: false,
       };
-    }
-
-    case "ADD_ITEM": {
-      const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
-      );
-
-      if (existingItem) {
-        const updatedItems = state.items.map((item) =>
-          item.id === action.payload.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-        return {
-          items: updatedItems,
-          total: updatedItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          ),
-        };
-      } else {
-        const newItems = [...state.items, { ...action.payload, quantity: 1 }];
-        return {
-          items: newItems,
-          total: newItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          ),
-        };
-      }
-    }
-
-    case "REMOVE_ITEM": {
-      const newItems = state.items.filter((item) => item.id !== action.payload);
-      return {
-        items: newItems,
-        total: newItems.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        ),
-      };
-    }
-
-    case "UPDATE_QUANTITY": {
-      const updatedItems = state.items
-        .map((item) =>
-          item.id === action.payload.id
-            ? { ...item, quantity: Math.max(0, action.payload.quantity) }
-            : item
-        )
-        .filter((item) => item.quantity > 0);
-
-      return {
-        items: updatedItems,
-        total: updatedItems.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        ),
-      };
-    }
-
     case "CLEAR_CART":
-      return { items: [], total: 0 };
-
+      return { ...state, items: [], total: 0, cartId: null };
     default:
       return state;
   }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0 });
+  const [state, dispatch] = useReducer(cartReducer, {
+    items: [],
+    total: 0,
+    loading: true,
+    cartId: null,
+  });
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Cargar carrito del usuario cuando se autentica
-  useEffect(() => {
-    if (user) {
-      const savedCart = localStorage.getItem(`cart_${user.id}`);
-      if (savedCart) {
-        const cartItems = JSON.parse(savedCart);
-        dispatch({ type: "LOAD_CART", payload: cartItems });
+  const fetchCart = useCallback(async () => {
+    if (!user) {
+      dispatch({ type: "CLEAR_CART" });
+      return;
+    }
+
+    dispatch({ type: "SET_LOADING", payload: true });
+    try {
+      const response = await fetch("/api/cart");
+      if (response.ok) {
+        const data = await response.json();
+        dispatch({ type: "SET_CART", payload: data });
+      } else {
+        dispatch({ type: "CLEAR_CART" });
       }
-    } else {
-      // Si no hay usuario, limpiar carrito
+    } catch (error) {
+      console.error("Error fetching cart:", error);
       dispatch({ type: "CLEAR_CART" });
     }
   }, [user]);
 
-  // Guardar carrito cuando cambie
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(`cart_${user.id}`, JSON.stringify(state.items));
+    fetchCart();
+  }, [fetchCart]);
+
+  const addItem = async (item: Omit<CartItem, "quantity" | "productId"> & { id: string }) => {
+    if (!user || !state.cartId) return;
+    try {
+      const response = await fetch("/api/cart/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: item.id, quantity: 1 }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        dispatch({ type: "SET_CART", payload: data });
+        toast({
+          title: "Producto agregado",
+          description: `${item.name} se agregó al carrito`,
+        });
+      }
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
     }
-  }, [state.items, user]);
-
-  const addItem = (item: Omit<CartItem, "quantity">) => {
-    dispatch({ type: "ADD_ITEM", payload: item });
   };
 
-  const removeItem = (id: string) => {
-    dispatch({ type: "REMOVE_ITEM", payload: id });
+  const removeItem = async (id: string) => {
+    if (!user || !state.cartId) return;
+    try {
+      const response = await fetch(`/api/cart/items/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        dispatch({ type: "SET_CART", payload: data });
+        toast({
+          title: "Producto eliminado",
+          description: `El producto se eliminó del carrito`,
+        });
+      }
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+    }
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
+  const updateQuantity = async (id: string, quantity: number) => {
+    if (!user || !state.cartId) return;
+    try {
+      const response = await fetch(`/api/cart/items/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        dispatch({ type: "SET_CART", payload: data });
+      }
+    } catch (error) {
+      console.error("Error updating item quantity:", error);
+    }
   };
 
-  const clearCart = () => {
-    dispatch({ type: "CLEAR_CART" });
+  const clearCart = async () => {
+    if (!user || !state.cartId) return;
+    try {
+      const response = await fetch("/api/cart", {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        dispatch({ type: "CLEAR_CART" });
+        toast({
+          title: "Carrito vaciado",
+          description: "Se eliminaron todos los productos del carrito",
+        });
+      }
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+    }
   };
 
   return (
     <CartContext.Provider
       value={{
         state,
-        dispatch,
         addItem,
         removeItem,
         updateQuantity,
         clearCart,
         items: state.items,
         total: state.total,
+        loading: state.loading,
       }}
     >
       {children}

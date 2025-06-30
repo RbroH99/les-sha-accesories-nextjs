@@ -212,17 +212,23 @@ export default function TiendaPage() {
     applyFiltersAndSort,
   ]);
 
-  const handleAddToCart = (product: ProductDetail) => {
-    addItem({
+  const handleAddToCart = async (product: ProductDetail) => {
+    await addItem({
       id: product.id,
       name: product.name,
       price: product.price,
       image: product.images[0] || "/placeholder.svg?height=300&width=300",
       category: product.categoryId,
     });
-    toast({
-      title: "Producto agregado",
-      description: `${product.name} se agregó al carrito`,
+  };
+
+  const handleToggleFavorite = async (product: ProductDetail) => {
+    await toggleFavorite({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0] || "/placeholder.svg?height=300&width=300",
+      category: product.categoryId,
     });
   };
 
@@ -782,7 +788,7 @@ export default function TiendaPage() {
                             variant="ghost"
                             size="icon"
                             className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
                               if (!user) {
                                 toast({
@@ -793,25 +799,7 @@ export default function TiendaPage() {
                                 });
                                 return;
                               }
-                              toggleFavorite({
-                                id: product.id,
-                                name: product.name,
-                                price: product.price,
-                                image:
-                                  product.images[0] ||
-                                  "/placeholder.svg?height=300&width=300",
-                                category: product.categoryId,
-                              });
-                              toast({
-                                title: isFavorite(product.id)
-                                  ? "Eliminado de favoritos"
-                                  : "Agregado a favoritos",
-                                description: `${product.name} ${
-                                  isFavorite(product.id)
-                                    ? "se eliminó de"
-                                    : "se agregó a"
-                                } tus favoritos`,
-                              });
+                              await handleToggleFavorite(product);
                             }}
                           >
                             <Heart
@@ -880,7 +868,7 @@ export default function TiendaPage() {
                             <Button
                               size="sm"
                               className="bg-rose-600 hover:bg-rose-700"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation();
                                 if (!user) {
                                   toast({
@@ -891,7 +879,7 @@ export default function TiendaPage() {
                                   });
                                   return;
                                 }
-                                handleAddToCart(product);
+                                await handleAddToCart(product);
                               }}
                             >
                               <ShoppingBag className="w-3 h-3 mr-1" />

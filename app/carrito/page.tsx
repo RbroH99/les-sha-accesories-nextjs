@@ -9,14 +9,27 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 
 export default function CarritoPage() {
-  const { items, total, updateQuantity, removeItem, clearCart } = useCart()
+  const { items, total, updateQuantity, removeItem, clearCart, loading } = useCart();
 
-  const handleQuantityChange = (id: number, newQuantity: number) => {
+  const handleQuantityChange = async (id: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      removeItem(id)
+      await removeItem(id);
     } else {
-      updateQuantity(id, newQuantity)
+      await updateQuantity(id, newQuantity);
     }
+  };
+
+  if (loading) {
+    return (
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="container mx-auto px-4">
+                <div className="max-w-2xl mx-auto text-center py-16">
+                    <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Cargando tu carrito...</h1>
+                </div>
+            </div>
+        </div>
+    )
   }
 
   if (items.length === 0) {
@@ -130,7 +143,7 @@ export default function CarritoPage() {
             <div className="flex justify-center sm:justify-end">
               <Button
                 variant="outline"
-                onClick={clearCart}
+                onClick={async () => await clearCart()}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto"
               >
                 <Trash2 className="h-4 w-4 mr-2" />

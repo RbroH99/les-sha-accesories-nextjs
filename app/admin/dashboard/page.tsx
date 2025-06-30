@@ -71,7 +71,6 @@ import {
   ProductTag,
   useCategories,
 } from "@/contexts/categories-context";
-import { AnyForeignKeyBuilder } from "drizzle-orm/gel-core";
 import { ProductDetail } from "@/lib/repositories/products";
 
 export default function AdminDashboard() {
@@ -93,6 +92,72 @@ export default function AdminDashboard() {
     updateDiscount,
     deleteDiscount,
   } = useDiscounts();
+  const [settings, setSettings] = useState({
+    siteName: "Lesha",
+    maintenanceMode: false,
+    contactEmail: "contacto@lesha.com",
+  });
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setLoadingSettings(true);
+      try {
+        const response = await fetch("/api/settings");
+        const data = await response.json();
+        if (response.ok) {
+          setSettings(prev => ({ ...prev, ...data }));
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las configuraciones.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, [toast]);
+
+  const handleSaveSettings = async () => {
+    const settingsToSave = Object.entries(settings).map(([key, value]) => ({
+      key,
+      value,
+    }));
+
+    try {
+      const response = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settingsToSave),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Configuración guardada",
+          description: "La configuración del sitio se ha actualizado.",
+        });
+      } else {
+        const result = await response.json();
+        toast({
+          title: "Error al guardar",
+          description: result.error || "No se pudo guardar la configuración.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error de red",
+        description: "No se pudo conectar con el servidor.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -137,10 +202,14 @@ export default function AdminDashboard() {
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
+    story: "",
     price: "",
     category: "",
     stock: "",
     images: [] as string[],
+    materials: [] as string[],
+    dimensions: "",
+    care: "",
     availabilityType: "stock_only",
     estimatedDeliveryDays: "7",
     hasWarranty: false,
@@ -152,11 +221,13 @@ export default function AdminDashboard() {
   });
 
   // Discount form state
-  const [newDiscount, setNewDiscount] = useState({
+  const [newDiscount, setNewDiscount] = useState<
+    Omit<Discount, "id" | "createdAt" | "updatedAt">
+  >({
     name: "",
     description: "",
     type: "percentage",
-    value: "",
+    value: 0,
     reason: "",
     startDate: "",
     endDate: "",
@@ -366,11 +437,15 @@ export default function AdminDashboard() {
     setEditingProduct(product);
     setNewProduct({
       name: product.name,
-      description: "",
+      description: product.description || "",
+      story: product.story || "",
       price: product.price.toString(),
       category: product.categoryId,
       stock: product.stock.toString(),
       images: product.images,
+      materials: product.materials || [],
+      dimensions: product.dimensions || "",
+      care: product.care || "",
       availabilityType: product.availabilityType,
       estimatedDeliveryDays: product.estimatedDeliveryDays?.toString() || "7",
       hasWarranty: product.hasWarranty || false,
@@ -389,7 +464,7 @@ export default function AdminDashboard() {
       name: discount.name,
       description: discount.description || "",
       type: discount.type,
-      value: discount.value.toString(),
+      value: discount.value,
       reason: discount.reason,
       startDate: discount.startDate || "",
       endDate: discount.endDate || "",
@@ -484,10 +559,14 @@ export default function AdminDashboard() {
     setNewProduct({
       name: "",
       description: "",
+      story: "",
       price: "",
       category: "",
       stock: "",
       images: [],
+      materials: [],
+      dimensions: "",
+      care: "",
       availabilityType: "stock_only",
       estimatedDeliveryDays: "7",
       hasWarranty: false,
@@ -506,7 +585,7 @@ export default function AdminDashboard() {
       name: "",
       description: "",
       type: "percentage",
-      value: "",
+      value: 0,
       reason: "",
       startDate: "",
       endDate: "",
@@ -585,6 +664,33 @@ export default function AdminDashboard() {
     await updateOrderStatus(orderId, newStatus);
   };
 
+  const [newlyUploaded, setNewlyUploaded] = useState<string[]>([]);
+
+  const handleMediaChange = (media: any[]) => {
+    const newUrls = media.map(m => m.url);
+    const oldUrls = (editingProduct?.images || []);
+    const trulyNew = newUrls.filter(url => !oldUrls.includes(url));
+    
+    setNewlyUploaded(prev => [...new Set([...prev, ...trulyNew])]);
+    setNewProduct(prev => ({ ...prev, images: newUrls }));
+  };
+
+  const cleanupImages = async () => {
+    if (newlyUploaded.length > 0) {
+      for (const url of newlyUploaded) {
+        const fileId = url.split("/").pop()?.split(".")[0];
+        if (fileId) {
+          await fetch("/api/delete-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileId }),
+          });
+        }
+      }
+    }
+    setNewlyUploaded([]);
+  };
+
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.category) {
       toast({
@@ -599,12 +705,13 @@ export default function AdminDashboard() {
     const productData = {
       name: newProduct.name,
       description: newProduct.description,
+      story: newProduct.story,
       price: Number.parseFloat(newProduct.price),
-      categoryId: newProduct.category, // Use categoryId
+      categoryId: newProduct.category,
       images: newProduct.images,
-      materials: [], // Assuming materials are not managed here, or add a field for it
-      dimensions: "", // Assuming dimensions are not managed here
-      care: "", // Assuming care is not managed here
+      materials: newProduct.materials,
+      dimensions: newProduct.dimensions,
+      care: newProduct.care,
       stock: Number.parseInt(newProduct.stock) || 0,
       availabilityType: newProduct.availabilityType,
       estimatedDeliveryDays: newProduct.estimatedDeliveryDays
@@ -615,8 +722,8 @@ export default function AdminDashboard() {
           ? Number.parseInt(newProduct.returnDays)
           : 30
         : 0,
-      isNew: true, // Or add a field for this
-      isActive: true, // Or add a field for this
+      isNew: !editingProduct,
+      isActive: true,
       hasWarranty: newProduct.hasWarranty,
       warrantyDuration: newProduct.hasWarranty
         ? newProduct.warrantyDuration
@@ -636,44 +743,39 @@ export default function AdminDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(productData),
         });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Producto actualizado",
-            description: "El producto se actualizó correctamente",
-          });
-          setProducts((prev) =>
-            prev.map((p) =>
-              p.id === editingProduct.id ? { ...p, ...result.product } : p
-            )
-          );
-        } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al actualizar producto",
-            variant: "destructive",
-          });
-        }
       } else {
         response = await fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(productData),
         });
-        result = await response.json();
-        if (response.ok) {
-          toast({
-            title: "Producto agregado",
-            description: "El producto ha sido agregado exitosamente",
-          });
-          setProducts((prev) => [...prev, result.product]);
+      }
+      
+      result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: `Producto ${editingProduct ? "actualizado" : "agregado"}`,
+          description: `El producto se ${editingProduct ? "actualizó" : "agregó"} correctamente`,
+        });
+        if (editingProduct) {
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.id === editingProduct.id ? { ...p, ...result.product } : p
+            )
+          );
         } else {
-          toast({
-            title: "Error",
-            description: result.error || "Error al agregar producto",
-            variant: "destructive",
-          });
+          setProducts((prev) => [...prev, result.product]);
         }
+        resetProductForm();
+        setNewlyUploaded([]); // Clear uploaded images on success
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || `Error al ${editingProduct ? "actualizar" : "agregar"} producto`,
+          variant: "destructive",
+        });
+        await cleanupImages(); // Cleanup images on failure
       }
     } catch (error) {
       console.error("Error saving product:", error);
@@ -682,8 +784,7 @@ export default function AdminDashboard() {
         description: "Error de red al guardar producto",
         variant: "destructive",
       });
-    } finally {
-      resetProductForm();
+      await cleanupImages(); // Cleanup images on network error
     }
   };
 
@@ -702,7 +803,7 @@ export default function AdminDashboard() {
       name: newDiscount.name,
       description: newDiscount.description,
       type: newDiscount.type as "percentage" | "fixed",
-      value: Number.parseFloat(newDiscount.value),
+      value: newDiscount.value,
       reason: newDiscount.reason,
       startDate: newDiscount.startDate || undefined,
       endDate: newDiscount.endDate || undefined,
@@ -911,6 +1012,60 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings">Configuración</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="settings" className="space-y-4 sm:space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuración General del Sitio</CardTitle>
+                <CardDescription>
+                  Ajusta las configuraciones globales de tu tienda.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="siteName">Nombre del Sitio</Label>
+                  <Input
+                    id="siteName"
+                    value={settings.siteName}
+                    onChange={(e) =>
+                      setSettings({ ...settings, siteName: e.target.value })
+                    }
+                    placeholder="El nombre de tu tienda"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Email de Contacto</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={settings.contactEmail}
+                    onChange={(e) =>
+                      setSettings({ ...settings, contactEmail: e.target.value })
+                    }
+                    placeholder="tu@email.com"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="maintenanceMode"
+                    checked={settings.maintenanceMode}
+                    onCheckedChange={(checked) =>
+                      setSettings({ ...settings, maintenanceMode: checked })
+                    }
+                  />
+                  <Label htmlFor="maintenanceMode">Modo Mantenimiento</Label>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Si está activo, los visitantes verán una página de mantenimiento en lugar de la tienda.
+                </p>
+              </CardContent>
+              <div className="border-t px-6 py-4">
+                <Button onClick={handleSaveSettings} disabled={loadingSettings}>
+                  {loadingSettings ? "Guardando..." : "Guardar Cambios"}
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
@@ -1089,8 +1244,8 @@ export default function AdminDashboard() {
                     {products.length}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {products.filter((p) => p.isActive).length} activos •{" "}
-                    {products.filter((p) => !p.isActive).length} inactivos
+                    {products.filter((p) => p?.isActive).length} activos •{" "}
+                    {products.filter((p) => !p?.isActive).length} inactivos
                   </div>
                 </CardContent>
               </Card>
@@ -1188,7 +1343,7 @@ export default function AdminDashboard() {
                     <SelectContent>
                       <SelectItem value="all">Todas las categorías</SelectItem>
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.name}>
+                        <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
                       ))}
@@ -1394,7 +1549,7 @@ export default function AdminDashboard() {
                                     {categories.map((category) => (
                                       <SelectItem
                                         key={category.id}
-                                        value={category.name}
+                                        value={category.id}
                                       >
                                         {category.name}
                                       </SelectItem>
@@ -1564,6 +1719,88 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
+                          <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">
+                              Detalles Adicionales
+                            </h3>
+                            <div>
+                              <Label htmlFor="story" className="text-sm">
+                                Historia del Producto
+                              </Label>
+                              <Textarea
+                                id="story"
+                                value={newProduct.story}
+                                onChange={(e) =>
+                                  setNewProduct({
+                                    ...newProduct,
+                                    story: e.target.value,
+                                  })
+                                }
+                                rows={3}
+                                className="text-sm"
+                                placeholder="Cuenta la inspiración o el proceso detrás de esta pieza..."
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="materials" className="text-sm">
+                                Materiales (separados por comas)
+                              </Label>
+                              <Input
+                                id="materials"
+                                value={newProduct.materials.join(", ")}
+                                onChange={(e) =>
+                                  setNewProduct({
+                                    ...newProduct,
+                                    materials: e.target.value
+                                      .split(",")
+                                      .map((m) => m.trim()),
+                                  })
+                                }
+                                className="text-sm"
+                                placeholder="Ej: Plata 925, Cuarzo rosa, Hilo de seda"
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              <div>
+                                <Label
+                                  htmlFor="dimensions"
+                                  className="text-sm"
+                                >
+                                  Dimensiones
+                                </Label>
+                                <Input
+                                  id="dimensions"
+                                  value={newProduct.dimensions}
+                                  onChange={(e) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      dimensions: e.target.value,
+                                    })
+                                  }
+                                  className="text-sm"
+                                  placeholder="Ej: 15cm de largo, 2cm de ancho"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="care" className="text-sm">
+                                  Cuidados Especiales
+                                </Label>
+                                <Input
+                                  id="care"
+                                  value={newProduct.care}
+                                  onChange={(e) =>
+                                    setNewProduct({
+                                      ...newProduct,
+                                      care: e.target.value,
+                                    })
+                                  }
+                                  className="text-sm"
+                                  placeholder="Ej: Evitar contacto con agua, Limpiar con paño seco"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
                           {/* Garantía */}
                           <div className="space-y-3 sm:space-y-4">
                             <h3 className="text-base sm:text-lg font-medium">
@@ -1696,10 +1933,15 @@ export default function AdminDashboard() {
                               Imágenes y Videos del Producto
                             </h3>
                             <ImageUpload
-                              images={newProduct.images}
-                              onImagesChange={(images) =>
-                                setNewProduct({ ...newProduct, images })
-                              }
+                              initialMedia={newProduct.images.map(url => ({ 
+                                id: url, 
+                                url, 
+                                fileId: url.split("/").pop()?.split(".")[0], 
+                                type: 'image', 
+                                name: '', 
+                                size: 0 
+                              }))}
+                              onMediaChange={handleMediaChange}
                               maxImages={8}
                               folder="products"
                               allowVideos={true}
@@ -2855,7 +3097,7 @@ export default function AdminDashboard() {
                                   onValueChange={(value) =>
                                     setNewDiscount({
                                       ...newDiscount,
-                                      type: value,
+                                      type: value as "fixed" | "percentage",
                                     })
                                   }
                                 >
@@ -2894,7 +3136,7 @@ export default function AdminDashboard() {
                                   onChange={(e) =>
                                     setNewDiscount({
                                       ...newDiscount,
-                                      value: e.target.value,
+                                      value: parseFloat(e.target.value),
                                     })
                                   }
                                   required
@@ -2961,7 +3203,13 @@ export default function AdminDashboard() {
                                   <Input
                                     id="startDate"
                                     type="date"
-                                    value={newDiscount.startDate}
+                                    value={
+                                      newDiscount.startDate instanceof Date
+                                        ? newDiscount.startDate
+                                            .toISOString()
+                                            .split("T")[0]
+                                        : newDiscount.startDate || ""
+                                    }
                                     onChange={(e) =>
                                       setNewDiscount({
                                         ...newDiscount,
@@ -2978,7 +3226,13 @@ export default function AdminDashboard() {
                                   <Input
                                     id="endDate"
                                     type="date"
-                                    value={newDiscount.endDate}
+                                    value={
+                                      newDiscount.endDate instanceof Date
+                                        ? newDiscount.endDate
+                                            .toISOString()
+                                            .split("T")[0]
+                                        : newDiscount.endDate || ""
+                                    }
                                     onChange={(e) =>
                                       setNewDiscount({
                                         ...newDiscount,
@@ -3095,8 +3349,14 @@ export default function AdminDashboard() {
                             discount.startDate &&
                             discount.endDate && (
                               <p className="text-xs sm:text-sm text-gray-500">
-                                <strong>Vigencia:</strong> {discount.startDate}{" "}
-                                - {discount.endDate}
+                                <strong>Vigencia:</strong>{" "}
+                                {new Date(
+                                  discount.startDate
+                                ).toLocaleDateString()}{" "}
+                                -{" "}
+                                {new Date(
+                                  discount.endDate
+                                ).toLocaleDateString()}
                               </p>
                             )}
                           {!discount.isGeneric && (

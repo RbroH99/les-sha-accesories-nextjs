@@ -1,0 +1,61 @@
+import { NextResponse, NextRequest } from "next/server";
+import { favoritesRepository } from "@/lib/repositories/favorites";
+import jwt from "jsonwebtoken";
+import { z } from "zod";
+
+const favoriteSchema = z.object({
+  productId: z.string(),
+});
+
+export async function GET(request: NextRequest) {
+  try {
+    const token = request.cookies.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const userId = (decoded as any).userId;
+    const favorites = await favoritesRepository.getFavoritesByUserId(userId);
+    return NextResponse.json(favorites);
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = request.cookies.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const userId = (decoded as any).userId;
+    const data = await request.json();
+    const parsedData = favoriteSchema.safeParse(data);
+
+    if (!parsedData.success) {
+      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+
+    const newFavorite = await favoritesRepository.addFavorite(
+      userId,
+      parsedData.data.productId
+    );
+
+    return NextResponse.json(newFavorite, { status: 201 });
+  } catch (error) {
+    console.error("Error adding favorite:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,12 +1,12 @@
-import { db } from "@/lib/db"
-import { discounts, discountProducts } from "@/lib/schema"
-import { eq, and } from "drizzle-orm"
-import type { Discount } from "@/contexts/discounts-context"
+import { db } from "@/lib/db";
+import { discounts, discountProducts } from "@/lib/schema";
+import { eq, and } from "drizzle-orm";
+import type { Discount } from "@/contexts/discounts-context";
 
 export class DiscountsRepository {
   async getAllDiscounts(): Promise<Discount[]> {
     try {
-      const result = await db.select().from(discounts)
+      const result = await db.select().from(discounts);
 
       const discountsWithProducts = await Promise.all(
         result.map(async (discount) => {
@@ -15,7 +15,7 @@ export class DiscountsRepository {
               productId: discountProducts.productId,
             })
             .from(discountProducts)
-            .where(eq(discountProducts.discountId, discount.id))
+            .where(eq(discountProducts.discountId, discount.id));
 
           return {
             id: discount.id,
@@ -24,26 +24,27 @@ export class DiscountsRepository {
             type: discount.type as "percentage" | "fixed",
             value: Number.parseFloat(discount.value),
             reason: discount.reason,
-            startDate: discount.startDate?.toISOString(),
-            endDate: discount.endDate?.toISOString(),
+            startDate: discount.startDate ?? undefined,
+            endDate: discount.endDate ?? undefined,
             isActive: discount.isActive,
             isGeneric: discount.isGeneric,
             productIds: productIds.map((p) => p.productId),
             createdAt: discount.createdAt.toISOString(),
-          }
-        }),
-      )
+            updatedAt: discount.updatedAt.toISOString(),
+          };
+        })
+      );
 
-      return discountsWithProducts
+      return discountsWithProducts;
     } catch (error) {
-      console.error("Error fetching discounts:", error)
-      return this.getMemoryDiscounts()
+      console.error("Error fetching discounts:", error);
+      return this.getMemoryDiscounts();
     }
   }
 
-  async createDiscount(data: Omit<Discount, "id" | "createdAt">): Promise<string> {
+  async createDiscount(data: Omit<Discount, "id">): Promise<string> {
     try {
-      const id = `discount_${Date.now()}`
+      const id = `discount_${Date.now()}`;
 
       await db.insert(discounts).values({
         id,
@@ -56,7 +57,9 @@ export class DiscountsRepository {
         endDate: data.endDate ? new Date(data.endDate) : null,
         isActive: data.isActive,
         isGeneric: data.isGeneric,
-      })
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       // Insertar productos asociados
       if (data.productIds.length > 0) {
@@ -64,14 +67,14 @@ export class DiscountsRepository {
           data.productIds.map((productId) => ({
             discountId: id,
             productId,
-          })),
-        )
+          }))
+        );
       }
 
-      return id
+      return id;
     } catch (error) {
-      console.error("Error creating discount:", error)
-      throw new Error("Failed to create discount")
+      console.error("Error creating discount:", error);
+      throw new Error("Failed to create discount");
     }
   }
 
@@ -90,12 +93,14 @@ export class DiscountsRepository {
           isActive: data.isActive,
           isGeneric: data.isGeneric,
         })
-        .where(eq(discounts.id, id))
+        .where(eq(discounts.id, id));
 
       // Actualizar productos asociados si se proporcionan
       if (data.productIds !== undefined) {
         // Eliminar asociaciones existentes
-        await db.delete(discountProducts).where(eq(discountProducts.discountId, id))
+        await db
+          .delete(discountProducts)
+          .where(eq(discountProducts.discountId, id));
 
         // Insertar nuevas asociaciones
         if (data.productIds.length > 0) {
@@ -103,36 +108,38 @@ export class DiscountsRepository {
             data.productIds.map((productId) => ({
               discountId: id,
               productId,
-            })),
-          )
+            }))
+          );
         }
       }
 
-      return true
+      return true;
     } catch (error) {
-      console.error("Error updating discount:", error)
-      return false
+      console.error("Error updating discount:", error);
+      return false;
     }
   }
 
   async deleteDiscount(id: string): Promise<boolean> {
     try {
       // Eliminar asociaciones con productos
-      await db.delete(discountProducts).where(eq(discountProducts.discountId, id))
+      await db
+        .delete(discountProducts)
+        .where(eq(discountProducts.discountId, id));
 
       // Eliminar descuento
-      await db.delete(discounts).where(eq(discounts.id, id))
+      await db.delete(discounts).where(eq(discounts.id, id));
 
-      return true
+      return true;
     } catch (error) {
-      console.error("Error deleting discount:", error)
-      return false
+      console.error("Error deleting discount:", error);
+      return false;
     }
   }
 
-  async getActiveDiscountsForProduct(productId: number): Promise<Discount[]> {
+  async getActiveDiscountsForProduct(productId: string): Promise<Discount[]> {
     try {
-      const now = new Date()
+      const now = new Date();
 
       const result = await db
         .select({
@@ -147,19 +154,30 @@ export class DiscountsRepository {
           isActive: discounts.isActive,
           isGeneric: discounts.isGeneric,
           createdAt: discounts.createdAt,
+          updatedAt: discounts.updatedAt,
         })
         .from(discounts)
-        .innerJoin(discountProducts, eq(discounts.id, discountProducts.discountId))
-        .where(and(eq(discountProducts.productId, productId), eq(discounts.isActive, true)))
+        .innerJoin(
+          discountProducts,
+          eq(discounts.id, discountProducts.discountId)
+        )
+        .where(
+          and(
+            eq(discountProducts.productId, productId),
+            eq(discounts.isActive, true)
+          )
+        );
 
       return result
         .filter((discount) => {
-          if (discount.isGeneric) return true
+          if (discount.isGeneric) return true;
 
-          const startDate = discount.startDate
-          const endDate = discount.endDate
+          const startDate = discount.startDate;
+          const endDate = discount.endDate;
 
-          return (!startDate || startDate <= now) && (!endDate || endDate >= now)
+          return (
+            (!startDate || startDate <= now) && (!endDate || endDate >= now)
+          );
         })
         .map((discount) => ({
           id: discount.id,
@@ -174,17 +192,18 @@ export class DiscountsRepository {
           isGeneric: discount.isGeneric,
           productIds: [productId], // Solo incluimos el producto actual
           createdAt: discount.createdAt.toISOString(),
-        }))
+          updatedAt: discount.updatedAt.toISOString(),
+        }));
     } catch (error) {
-      console.error("Error fetching active discounts for product:", error)
-      return []
+      console.error("Error fetching active discounts for product:", error);
+      return [];
     }
   }
 
   // Método de fallback con datos en memoria
   private getMemoryDiscounts(): Discount[] {
-    return [] // Por ahora vacío, se puede llenar con datos de ejemplo
+    return []; // Por ahora vacío, se puede llenar con datos de ejemplo
   }
 }
 
-export const discountsRepository = new DiscountsRepository()
+export const discountsRepository = new DiscountsRepository();

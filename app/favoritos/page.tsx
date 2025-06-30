@@ -14,42 +14,47 @@ import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 
 export default function FavoritosPage() {
-  const { favorites, removeFromFavorites } = useFavorites()
-  const { addItem } = useCart()
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const router = useRouter()
+  const { favorites, removeFromFavorites, loading } = useFavorites();
+  const { addItem } = useCart();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [user, router])
+  }, [user, router]);
 
-  const handleAddToCart = (favorite: any) => {
-    addItem({
+  const handleAddToCart = async (favorite: any) => {
+    await addItem({
       id: favorite.id,
       name: favorite.name,
       price: favorite.price,
       image: favorite.image,
       category: favorite.category,
-    })
-    toast({
-      title: "Producto agregado",
-      description: `${favorite.name} se agregó al carrito`,
-    })
-  }
+    });
+  };
 
-  const handleRemoveFromFavorites = (id: number, name: string) => {
-    removeFromFavorites(id)
-    toast({
-      title: "Eliminado de favoritos",
-      description: `${name} se eliminó de tus favoritos`,
-    })
+  const handleRemoveFromFavorites = async (id: string, name: string) => {
+    await removeFromFavorites(id);
+  };
+
+  if (loading) {
+    return (
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="container mx-auto px-4">
+                <div className="max-w-2xl mx-auto text-center py-16">
+                    <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Cargando tus favoritos...</h1>
+                </div>
+            </div>
+        </div>
+    )
   }
 
   if (!user) {
-    return null
+    return null;
   }
 
   if (favorites.length === 0) {
@@ -99,7 +104,7 @@ export default function FavoritosPage() {
                     variant="ghost"
                     size="icon"
                     className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white"
-                    onClick={() => handleRemoveFromFavorites(favorite.id, favorite.name)}
+                    onClick={async () => await handleRemoveFromFavorites(favorite.id, favorite.name)}
                   >
                     <Heart className="w-4 h-4 fill-rose-600 text-rose-600" />
                   </Button>
@@ -125,7 +130,7 @@ export default function FavoritosPage() {
                     <Button
                       size="sm"
                       className="bg-rose-600 hover:bg-rose-700"
-                      onClick={() => handleAddToCart(favorite)}
+                      onClick={async () => await handleAddToCart(favorite)}
                     >
                       <ShoppingBag className="w-3 h-3 mr-1" />
                       Agregar

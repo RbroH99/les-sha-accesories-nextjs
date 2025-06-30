@@ -17,12 +17,13 @@ export interface Discount {
   type: "percentage" | "fixed";
   value: number;
   reason: string;
-  startDate?: string;
-  endDate?: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
   isActive: boolean;
   productIds: string[];
   isGeneric: boolean;
-  createdAt: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 interface DiscountsContextType {
@@ -30,7 +31,7 @@ interface DiscountsContextType {
   loadingDiscounts: boolean;
   fetchDiscounts: () => Promise<void>;
   createDiscount: (
-    data: Omit<Discount, "id" | "createdAt">
+    data: Omit<Discount, "id" | "createdAt" | "updatedAt">
   ) => Promise<string | undefined>;
   updateDiscount: (
     id: string,
@@ -78,7 +79,7 @@ export function DiscountsProvider({ children }: { children: ReactNode }) {
   }, [fetchDiscounts]);
 
   const createDiscount = async (
-    data: Omit<Discount, "id" | "createdAt">
+    data: Omit<Discount, "id" | "createdAt" | "updatedAt">
   ): Promise<string | undefined> => {
     try {
       const response = await fetch("/api/discounts", {
@@ -201,7 +202,10 @@ export function DiscountsProvider({ children }: { children: ReactNode }) {
   );
 
   const calculateDiscountedPrice = useCallback(
-    (originalPrice: number, productId: string): { price: number; discount?: Discount } => {
+    (
+      originalPrice: number,
+      productId: string
+    ): { price: number; discount?: Discount } => {
       const activeDiscounts = getActiveDiscountsForProduct(productId);
 
       if (activeDiscounts.length === 0) {

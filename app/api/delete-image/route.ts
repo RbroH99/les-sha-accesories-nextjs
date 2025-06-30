@@ -1,23 +1,22 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { deleteImage } from "@/lib/imagekit"
+import { NextResponse } from "next/server";
+import { imagekit } from "@/lib/imagekit";
 
-export async function DELETE(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { fileId } = await request.json()
+    const { fileId } = await req.json();
 
     if (!fileId) {
-      return NextResponse.json({ error: "File ID is required" }, { status: 400 })
+      return NextResponse.json({ error: "File ID is required" }, { status: 400 });
     }
 
-    const success = await deleteImage(fileId)
+    await imagekit.deleteFile(fileId);
 
-    if (success) {
-      return NextResponse.json({ success: true })
-    } else {
-      return NextResponse.json({ error: "Failed to delete image" }, { status: 500 })
-    }
-  } catch (error) {
-    console.error("Error deleting image:", error)
-    return NextResponse.json({ error: "Failed to delete image" }, { status: 500 })
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting image from ImageKit:", error);
+    return NextResponse.json(
+      { error: "Failed to delete image", details: error.message },
+      { status: 500 }
+    );
   }
 }

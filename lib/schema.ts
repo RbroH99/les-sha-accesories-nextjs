@@ -18,8 +18,8 @@ export const categories = pgTable("categories", {
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Tabla de tags
@@ -28,8 +28,8 @@ export const tags = pgTable("tags", {
   name: varchar("name", { length: 100 }).notNull(),
   color: varchar("color", { length: 7 }).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Tabla de descuentos
@@ -49,8 +49,8 @@ export const discounts = pgTable("discounts", {
   endDate: timestamp("end_date"),
   isActive: boolean("is_active").default(true).notNull(),
   isGeneric: boolean("is_generic").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Tabla de productos
@@ -89,8 +89,8 @@ export const products = pgTable("products", {
   warrantyDuration: integer("warranty_duration"),
   warrantyUnit: warrantyUnitEnum("warranty_unit"),
   discountId: varchar("discount_id", { length: 50 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Tabla de relación productos-tags (muchos a muchos)
@@ -124,8 +124,8 @@ export const users = pgTable("users", {
     zipCode: string;
     country: string;
   }>(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Tabla de pedidos
@@ -154,8 +154,8 @@ export const orders = pgTable("orders", {
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   status: orderStatusEnum("status").default("pendiente").notNull(),
   notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Tabla de items del pedido
@@ -184,7 +184,7 @@ export const contactMessages = pgTable("contact_messages", {
   subject: varchar("subject", { length: 255 }).notNull(),
   message: text("message").notNull(),
   status: contactMessageStatusEnum("status").default("new").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // Relaciones
@@ -212,6 +212,8 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   productTags: many(productTags),
   orderItems: many(orderItems),
+  favorite: one(favorites),
+  cartItem: one(cartItems),
 }));
 
 export const productTagsRelations = relations(productTags, ({ one }) => ({
@@ -241,6 +243,8 @@ export const discountProductsRelations = relations(
 
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
+  favorites: many(favorites),
+  cart: one(carts),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -261,3 +265,81 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     references: [products.id],
   }),
 }));
+
+// Tabla de favoritos
+export const favorites = pgTable("favorites", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+  productId: varchar("product_id", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  user: one(users, {
+    fields: [favorites.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [favorites.productId],
+    references: [products.id],
+  }),
+}));
+
+// Tabla de carritos
+export const carts = pgTable("carts", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  userId: varchar("user_id", { length: 50 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const cartsRelations = relations(carts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [carts.userId],
+    references: [users.id],
+  }),
+  items: many(cartItems),
+}));
+
+// Tabla de items del carrito
+export const cartItems = pgTable("cart_items", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  cartId: varchar("cart_id", { length: 50 }).notNull(),
+  productId: varchar("product_id", { length: 50 }).notNull(),
+  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, {
+    fields: [cartItems.cartId],
+    references: [carts.id],
+  }),
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+}));
+
+// Tabla de refresh tokens
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+  token: text("token").notNull(),
+  expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+});
+
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [refreshTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+// Tabla de configuraciones
+export const settings = pgTable("settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: json("value"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});

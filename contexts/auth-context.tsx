@@ -1,8 +1,17 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+  useCallback,
+} from "react";
 import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
+// Interfaces
 interface Address {
   address: string;
   city: string;
@@ -31,58 +40,157 @@ interface AuthContextType {
     password: string,
     firstName?: string,
     lastName?: string,
-    phone?: string,
+    phone?: string
   ) => Promise<boolean>;
   logout: () => void;
-  updateProfile: (updates: {
-    username?: string;
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    defaultAddress?: Address;
-  }) => Promise<boolean>;
+  updateProfile: (updates: Partial<User>) => Promise<boolean>;
+  fetchWithAuth: (
+    url: string,
+    options?: RequestInit
+  ) => Promise<Response | undefined>;
 }
 
+interface DecodedToken {
+  userId: string;
+  username: string;
+  email: string;
+  role: "user" | "admin";
+  exp: number;
+}
+
+// Context
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Helper Functions
+const decodeToken = (token: string): DecodedToken | null => {
+  try {
+    return jwtDecode(token);
+  } catch (error) {
+    console.error("Invalid token:", error);
+    return null;
+  }
+};
+
+// AuthProvider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = Cookies.get("token");
-    if (token) {
-      // In a real app, you would verify the token on the server
-      // and fetch user data based on the token's payload.
-      // For this example, we'll decode it directly (less secure for production)
-      try {
-        const decodedToken: any = JSON.parse(atob(token.split('.')[1])); // Basic JWT decode
-        setUser({
-          id: decodedToken.userId,
-          username: decodedToken.username,
-          email: decodedToken.email,
-          role: decodedToken.role,
-        });
-      } catch (error) {
-        console.error("Error decoding token:", error);
-        Cookies.remove("token");
+  const refreshToken = useCallback(async () => {
+    const refreshToken = Cookies.get("refreshToken");
+    if (!refreshToken) {
+      logout();
+      return null;
+    }
+
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        logout();
+        return null;
       }
+
+      const { accessToken: newAccessToken } = await response.json();
+      setAccessToken(newAccessToken);
+      Cookies.set("accessToken", newAccessToken, {
+        expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes
+      });
+      return newAccessToken;
+    } catch (error) {
+      console.error("Failed to refresh token:", error);
+      logout();
+      return null;
     }
   }, []);
 
-  const login = async (identifier: string, password: string): Promise<boolean> => {
+  const fetchWithAuth = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      let token = accessToken;
+
+      if (token) {
+        const decoded: DecodedToken | null = decodeToken(token);
+        if (!decoded || decoded.exp * 1000 < Date.now()) {
+          token = await refreshToken();
+        }
+      } else {
+        token = await refreshToken();
+      }
+
+      if (!token) {
+        return undefined; // No valid token, cannot proceed
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 401) {
+        const newToken = await refreshToken();
+        if (newToken) {
+          // Retry the request with the new token
+          return fetch(url, {
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${newToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+        }
+      }
+
+      return response;
+    },
+    [accessToken, refreshToken]
+  );
+
+  useEffect(() => {
+    const token = Cookies.get("accessToken");
+    if (token) {
+      const decoded = decodeToken(token);
+      if (decoded && decoded.exp * 1000 > Date.now()) {
+        setAccessToken(token);
+        setUser({
+          id: decoded.userId,
+          username: decoded.username,
+          email: decoded.email,
+          role: decoded.role,
+        });
+      } else {
+        refreshToken();
+      }
+    }
+  }, [refreshToken]);
+
+  const login = async (
+    identifier: string,
+    password: string
+  ): Promise<boolean> => {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        Cookies.set("token", data.token, { expires: 7 }); // Token expires in 7 days
+        setAccessToken(data.accessToken);
+        Cookies.set("accessToken", data.accessToken, {
+          expires: new Date(new Date().getTime() + 15 * 60 * 1000), // 15 minutes
+        });
+        Cookies.set("refreshToken", data.refreshToken, { expires: 7 }); // 7 days
         setUser(data.user);
         return true;
       } else {
@@ -101,24 +209,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     firstName?: string,
     lastName?: string,
-    phone?: string,
+    phone?: string
   ): Promise<boolean> => {
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, email, password, firstName, lastName, phone }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          firstName,
+          lastName,
+          phone,
+        }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        // After successful registration, attempt to log in the user
-        const loginSuccess = await login(username, password); // Use username for login after registration
-        return loginSuccess;
+        return await login(username, password);
       } else {
+        const data = await response.json();
         console.error("Registration failed:", data.error);
         return false;
       }
@@ -128,39 +238,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateProfile = async (updates: {
-    username?: string;
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    defaultAddress?: Address;
-  }): Promise<boolean> => {
+  const updateProfile = async (updates: Partial<User>): Promise<boolean> => {
     if (!user) return false;
 
     try {
-      const token = Cookies.get("token");
-      if (!token) {
-        console.error("No token found for profile update.");
-        return false;
-      }
-
-      const response = await fetch("/api/user/profile", {
+      const response = await fetchWithAuth("/api/user/profile", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(updates),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Update local user state with the data returned from the API
-        setUser((prevUser) => (prevUser ? { ...prevUser, ...data.user } : null));
+      if (response && response.ok) {
+        const data = await response.json();
+        setUser((prev) => (prev ? { ...prev, ...data.user } : null));
         return true;
       } else {
-        console.error("Profile update failed:", data.error);
+        const errorData = await response?.json();
+        console.error("Profile update failed:", errorData?.error);
         return false;
       }
     } catch (error) {
@@ -170,12 +263,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    Cookies.remove("token");
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
     setUser(null);
+    setAccessToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, updateProfile, fetchWithAuth }}
+    >
       {children}
     </AuthContext.Provider>
   );
