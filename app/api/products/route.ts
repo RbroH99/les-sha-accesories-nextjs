@@ -5,6 +5,10 @@ import { productsRepository } from "@/lib/repositories/products";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+  const offset = (page - 1) * limit;
+
   const sortBy =
     (searchParams.get("sortBy") as "name" | "price" | "stock" | "created_at") ??
     "created_at";
@@ -35,15 +39,24 @@ export async function GET(request: Request) {
       : undefined,
     isNew: searchParams.get("isNew") === "true" ? true : undefined,
     hasDiscount: searchParams.get("hasDiscount") === "true" ? true : undefined,
+    hasImages: searchParams.get("hasImages") === "true" ? true : undefined,
     availabilityType: searchParams.get("availabilityType") as
       | "stock_only"
       | "stock_and_order"
       | "order_only"
       | undefined,
+    limit,
+    offset,
   };
 
   const products = await productsRepository.getAllProducts(filters);
-  return NextResponse.json(products);
+  const totalProducts = await productsRepository.countAllProducts(filters);
+
+  return NextResponse.json({
+    data: products,
+    total: totalProducts,
+    totalPages: Math.ceil(totalProducts / limit),
+  });
 }
 
 // POST /api/products
@@ -60,3 +73,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

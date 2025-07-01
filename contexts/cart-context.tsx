@@ -36,7 +36,9 @@ type CartAction =
 
 const CartContext = createContext<{
   state: CartState;
-  addItem: (item: Omit<CartItem, "quantity" | "productId"> & { id: string }) => Promise<void>;
+  addItem: (
+    item: Omit<CartItem, "quantity" | "productId"> & { id: string }
+  ) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -50,12 +52,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "SET_LOADING":
       return { ...state, loading: action.payload };
     case "SET_CART":
+      if (!action.payload || !action.payload.items) {
+        return { ...state, items: [], total: 0, cartId: action.payload?.id || null, loading: false };
+      }
       const items = action.payload.items.map((item: any) => ({
         id: item.id,
         productId: item.product.id,
         name: item.product.name,
-        price: item.product.price,
-        image: item.product.images[0] || "/placeholder.svg",
+        price: parseFloat(item.product.price),
+        image: item.product.images?.[0] || "/placeholder.svg",
         quantity: item.quantity,
         category: item.product.categoryId,
       }));
@@ -80,19 +85,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     loading: true,
     cartId: null,
   });
-  const { user } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const { toast } = useToast();
 
   const fetchCart = useCallback(async () => {
-    if (!user) {
+    if (!user || !fetchWithAuth) {
       dispatch({ type: "CLEAR_CART" });
       return;
     }
 
     dispatch({ type: "SET_LOADING", payload: true });
     try {
-      const response = await fetch("/api/cart");
-      if (response.ok) {
+      const response = await fetchWithAuth("/api/cart");
+      if (response && response.ok) {
         const data = await response.json();
         dispatch({ type: "SET_CART", payload: data });
       } else {
@@ -102,21 +107,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error("Error fetching cart:", error);
       dispatch({ type: "CLEAR_CART" });
     }
-  }, [user]);
+  }, [user, fetchWithAuth]);
 
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    // Fetch cart only when user is loaded and authenticated
+    if (user) {
+      fetchCart();
+    }
+  }, [user, fetchCart]);
 
-  const addItem = async (item: Omit<CartItem, "quantity" | "productId"> & { id: string }) => {
-    if (!user || !state.cartId) return;
+  const addItem = async (
+    item: Omit<CartItem, "quantity" | "productId"> & { id: string }
+  ) => {
+    if (!user || !state.cartId || !fetchWithAuth) return;
     try {
-      const response = await fetch("/api/cart/items", {
+      const response = await fetchWithAuth("/api/cart/items", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: item.id, quantity: 1 }),
       });
-      if (response.ok) {
+      if (response && response.ok) {
         const data = await response.json();
         dispatch({ type: "SET_CART", payload: data });
         toast({
@@ -130,12 +139,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const removeItem = async (id: string) => {
-    if (!user || !state.cartId) return;
+    if (!user || !state.cartId || !fetchWithAuth) return;
     try {
-      const response = await fetch(`/api/cart/items/${id}`, {
+      const response = await fetchWithAuth(`/api/cart/items/${id}`, {
         method: "DELETE",
       });
-      if (response.ok) {
+      if (response && response.ok) {
         const data = await response.json();
         dispatch({ type: "SET_CART", payload: data });
         toast({
@@ -149,14 +158,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = async (id: string, quantity: number) => {
-    if (!user || !state.cartId) return;
+    if (!user || !state.cartId || !fetchWithAuth) return;
     try {
-      const response = await fetch(`/api/cart/items/${id}`, {
+      const response = await fetchWithAuth(`/api/cart/items/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quantity }),
       });
-      if (response.ok) {
+      if (response && response.ok) {
         const data = await response.json();
         dispatch({ type: "SET_CART", payload: data });
       }
@@ -166,12 +174,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = async () => {
-    if (!user || !state.cartId) return;
+    if (!user || !state.cartId || !fetchWithAuth) return;
     try {
-      const response = await fetch("/api/cart", {
+      const response = await fetchWithAuth("/api/cart", {
         method: "DELETE",
       });
-      if (response.ok) {
+      if (response && response.ok) {
         dispatch({ type: "CLEAR_CART" });
         toast({
           title: "Carrito vaciado",

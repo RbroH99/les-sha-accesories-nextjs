@@ -33,11 +33,11 @@ const FavoritesContext = createContext<FavoritesContextType | null>(null);
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, fetchWithAuth } = useAuth();
   const { toast } = useToast();
 
   const fetchFavorites = useCallback(async () => {
-    if (!user) {
+    if (!user || !fetchWithAuth) {
       setFavorites([]);
       setLoading(false);
       return;
@@ -45,12 +45,12 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/favorites");
-      if (response.ok) {
+      const response = await fetchWithAuth("/api/favorites");
+      if (response?.ok) {
         const data = await response.json();
-        // This assumes the API returns product details, not just IDs
-        // If not, an additional fetch would be needed here
-        setFavorites(data.map((fav: any) => ({ ...fav.product, id: fav.productId })));
+        setFavorites(
+          data.map((fav: any) => ({ ...fav.product, id: fav.productId }))
+        );
       } else {
         setFavorites([]);
       }
@@ -60,21 +60,20 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, fetchWithAuth]);
 
   useEffect(() => {
     fetchFavorites();
   }, [fetchFavorites]);
 
   const addToFavorites = async (item: FavoriteItem) => {
-    if (!user) return;
+    if (!user || !fetchWithAuth) return;
     try {
-      const response = await fetch("/api/favorites", {
+      const response = await fetchWithAuth("/api/favorites", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: item.id }),
       });
-      if (response.ok) {
+      if (response?.ok) {
         setFavorites((prev) => [...prev, item]);
         toast({
           title: "Agregado a favoritos",
@@ -87,12 +86,12 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   };
 
   const removeFromFavorites = async (id: string) => {
-    if (!user) return;
+    if (!user || !fetchWithAuth) return;
     try {
-      const response = await fetch(`/api/favorites/${id}`, {
+      const response = await fetchWithAuth(`/api/favorites/${id}`, {
         method: "DELETE",
       });
-      if (response.ok) {
+      if (response?.ok) {
         setFavorites((prev) => prev.filter((fav) => fav.id !== id));
         toast({
           title: "Eliminado de favoritos",

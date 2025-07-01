@@ -1,6 +1,17 @@
 import { db } from "@/lib/db";
 import { products, categories, productTags } from "@/lib/schema";
-import { eq, and, inArray, like, gte, lte, desc, asc } from "drizzle-orm";
+import {
+  eq,
+  and,
+  inArray,
+  like,
+  gte,
+  lte,
+  desc,
+  asc,
+  sql,
+  isNotNull,
+} from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 export interface ProductDetail {
@@ -64,8 +75,9 @@ export interface ProductFilters {
   maxStock?: number;
   isNew?: boolean;
   hasDiscount?: boolean;
+  hasImages?: boolean;
   availabilityType?: "stock_only" | "stock_and_order" | "order_only"; // Nuevo filtro
-  sortBy?: "name" | "price" | "stock" | "created_at";
+  sortBy?: "name" | "price" | "stock" | "created_at" | "newest";
   sortOrder?: "asc" | "desc";
   limit?: number;
   offset?: number;
@@ -108,6 +120,10 @@ export class ProductsRepository {
         if (filters.isNew !== undefined) {
           conditions.push(eq(products.isNew, filters.isNew));
         }
+        
+        if (filters.hasImages) {
+          conditions.push(isNotNull(products.images));
+        }
 
         if (filters.availabilityType) {
           conditions.push(
@@ -144,6 +160,33 @@ export class ProductsRepository {
         .from(products)
         .leftJoin(categories, eq(products.categoryId, categories.id))
         .where(and(...conditions));
+
+      // Aplicar ordenamiento
+      if (filters?.sortBy) {
+        const sortOrderFunc = filters.sortOrder === "desc" ? desc : asc;
+        let orderByColumn;
+
+        switch (filters.sortBy) {
+          case "price":
+            orderByColumn = products.price;
+            break;
+          case "name":
+            orderByColumn = products.name;
+            break;
+          case "newest":
+            orderByColumn = products.createdAt;
+            break;
+          default:
+            orderByColumn = products.createdAt;
+            break;
+        }
+        query = query.orderBy(sortOrderFunc(orderByColumn));
+      }
+
+      // Aplicar paginación
+      if (filters?.limit !== undefined && filters?.offset !== undefined) {
+        query = query.limit(filters.limit).offset(filters.offset);
+      }
 
       const result = await query;
 
@@ -182,6 +225,45 @@ export class ProductsRepository {
       console.error("Error fetching products:", error);
       // Fallback a datos en memoria para propósito demostrativo
       return this.getMemoryProducts();
+    }
+  }
+
+  async countAllProducts(filters?: ProductFilters): Promise<number> {
+    try {
+      const conditions = [eq(products.isActive, true)];
+
+      if (filters) {
+        if (filters.categoryIds?.length) {
+          conditions.push(inArray(products.categoryId, filters.categoryIds));
+        }
+        if (filters.search) {
+          conditions.push(like(products.name, `%${filters.search}%`));
+        }
+        if (filters.minPrice !== undefined) {
+          conditions.push(gte(products.price, filters.minPrice.toString()));
+        }
+        if (filters.maxPrice !== undefined) {
+          conditions.push(lte(products.price, filters.maxPrice.toString()));
+        }
+        if (filters.isNew !== undefined) {
+          conditions.push(eq(products.isNew, filters.isNew));
+        }
+        if (filters.availabilityType) {
+          conditions.push(
+            eq(products.availabilityType, filters.availabilityType)
+          );
+        }
+      }
+
+      const result = await db
+        .select({ count: sql`count(*)` })
+        .from(products)
+        .where(and(...conditions));
+
+      return Number(result[0].count);
+    } catch (error) {
+      console.error("Error counting products:", error);
+      return 0;
     }
   }
 

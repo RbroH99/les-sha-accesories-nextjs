@@ -1,48 +1,46 @@
-import { NextResponse, NextRequest } from "next/server";
-import { cartsRepository } from "@/lib/repositories/carts";
-import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server";
+import { CartsRepository } from "@/lib/repositories/carts";
+import { getUserIdFromRequest } from "@/lib/auth";
 import { z } from "zod";
 
-const cartItemSchema = z.object({
+const addItemSchema = z.object({
   productId: z.string(),
   quantity: z.number().min(1),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
+  const userId = await getUserIdFromRequest(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const token = request.cookies.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).userId;
-    const data = await request.json();
-    const parsedData = cartItemSchema.safeParse(data);
+    const cartsRepo = new CartsRepository();
+    const body = await req.json();
+    const parsedData = addItemSchema.safeParse(body);
 
     if (!parsedData.success) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid data", details: parsedData.error },
+        { status: 400 }
+      );
     }
 
-    const cart = await cartsRepository.getOrCreateCart(userId);
+    const { productId, quantity } = parsedData.data;
+    const cart = await cartsRepo.getCartByUserId(userId);
+
     if (!cart) {
       return NextResponse.json({ error: "Cart not found" }, { status: 404 });
     }
 
-    await cartsRepository.addCartItem(
-      cart.id,
-      parsedData.data.productId,
-      parsedData.data.quantity
-    );
+    await cartsRepo.addCartItem(cart.id, productId, quantity);
+    const updatedCart = await cartsRepo.getCartByUserId(userId);
 
-    const updatedCart = await cartsRepository.getCartByUserId(userId);
-
-    return NextResponse.json(updatedCart, { status: 201 });
+    return NextResponse.json(updatedCart);
   } catch (error) {
-    console.error("Error adding cart item:", error);
+    console.error("POST /api/cart/items error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Error adding item to cart" },
       { status: 500 }
     );
   }

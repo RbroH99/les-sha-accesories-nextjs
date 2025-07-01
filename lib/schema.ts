@@ -241,10 +241,13 @@ export const discountProductsRelations = relations(
   })
 );
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   orders: many(orders),
   favorites: many(favorites),
-  cart: one(carts),
+  cart: one(carts, {
+    fields: [users.id],
+    references: [carts.userId],
+  }),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -324,7 +327,7 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
 // Tabla de refresh tokens
 export const refreshTokens = pgTable("refresh_tokens", {
   id: varchar("id", { length: 50 }).primaryKey(),
-  userId: varchar("user_id", { length: 50 }).notNull(),
+  userId: varchar("user_id", { length: 50 }).notNull().unique(),
   token: text("token").notNull(),
   expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
 });

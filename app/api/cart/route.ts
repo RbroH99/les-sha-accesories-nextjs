@@ -1,54 +1,43 @@
-import { NextResponse, NextRequest } from "next/server";
-import { cartsRepository } from "@/lib/repositories/carts";
-import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server";
+import { CartsRepository } from "@/lib/repositories/carts";
+import { getUserIdFromRequest } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
+  const userId = await getUserIdFromRequest(req);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const token = req.cookies.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).userId;
-
-    const cart = await cartsRepository.getOrCreateCart(userId);
+    const cartsRepo = new CartsRepository();
+    const cart = await cartsRepo.getCartByUserId(userId);
     return NextResponse.json(cart);
   } catch (error) {
-    console.error("Error fetching cart:", error);
-    return NextResponse.json(
-      { error: "Unauthorized or invalid token" },
-      { status: 401 }
-    );
+    console.error("GET /api/cart error:", error);
+    return NextResponse.json({ error: "Error fetching cart" }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: Request) {
+  const userId = await getUserIdFromRequest(req);
+  const cartsRepo = new CartsRepository();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const token = req.cookies.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const success = await cartsRepo.clearCart(userId);
+    if (success) {
+      const cart = await cartsRepo.getCartByUserId(userId);
+      return NextResponse.json(cart);
+    } else {
+      return NextResponse.json(
+        { error: "Error clearing cart" },
+        { status: 500 }
+      );
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).userId;
-
-    const cart = await cartsRepository.getCartByUserId(userId);
-
-    if (!cart) {
-      return NextResponse.json({ message: "Cart already empty" });
-    }
-
-    await cartsRepository.clearCart(cart.id);
-
-    return NextResponse.json({ message: "Cart cleared successfully" });
   } catch (error) {
-    console.error("Error clearing cart:", error);
-    return NextResponse.json(
-      { error: "Unauthorized or invalid token" },
-      { status: 401 }
-    );
+    console.error("DELETE /api/cart error:", error);
+    return NextResponse.json({ error: "Error clearing cart" }, { status: 500 });
   }
 }

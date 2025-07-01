@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { favoritesRepository } from "@/lib/repositories/favorites";
-import jwt from "jsonwebtoken";
 import { z } from "zod";
+import { getUserIdFromRequest } from "@/lib/auth";
 
 const favoriteSchema = z.object({
   productId: z.string(),
@@ -9,14 +9,11 @@ const favoriteSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value;
-
-    if (!token) {
+    const userId = await getUserIdFromRequest(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).userId;
     const favorites = await favoritesRepository.getFavoritesByUserId(userId);
     return NextResponse.json(favorites);
   } catch (error) {
@@ -30,14 +27,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value;
-
-    if (!token) {
+    const userId = await getUserIdFromRequest(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).userId;
     const data = await request.json();
     const parsedData = favoriteSchema.safeParse(data);
 

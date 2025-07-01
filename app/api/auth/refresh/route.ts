@@ -23,11 +23,13 @@ export async function POST(req: Request) {
       .limit(1)
       .then((res) => res[0]);
 
-    if (!storedToken || new Date() > new Date(storedToken.expiresAt)) {
-      if (storedToken) {
-        await db.delete(refreshTokens).where(eq(refreshTokens.id, storedToken.id));
-      }
-      return NextResponse.json({ error: "Invalid or expired refresh token" }, { status: 401 });
+    if (!storedToken) {
+      return NextResponse.json({ error: "Invalid refresh token" }, { status: 401 });
+    }
+
+    if (new Date() > new Date(storedToken.expiresAt)) {
+      await db.delete(refreshTokens).where(eq(refreshTokens.id, storedToken.id));
+      return NextResponse.json({ error: "Expired refresh token" }, { status: 401 });
     }
 
     const user = await db

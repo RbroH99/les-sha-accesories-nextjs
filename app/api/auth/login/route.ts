@@ -47,17 +47,22 @@ export async function POST(req: Request) {
       { expiresIn: "15m" }
     );
 
-    const refreshToken = jwt.sign({ userId: user.id }, REFRESH_TOKEN_SECRET, {
-      expiresIn: "7d",
-    });
+    const refreshToken = jwt.sign({ userId: user.id }, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
+    // Upsert the refresh token
     await db.insert(refreshTokens).values({
       id: uuidv4(),
       userId: user.id,
       token: refreshToken,
       expiresAt,
+    }).onConflictDoUpdate({
+      target: refreshTokens.userId,
+      set: {
+        token: refreshToken,
+        expiresAt: expiresAt,
+      }
     });
 
     const { password: _, ...userResponse } = user;
