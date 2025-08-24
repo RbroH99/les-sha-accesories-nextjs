@@ -19,6 +19,10 @@ export async function getOrderConfirmationEmailHtml(data: any) {
     html = html.replace(/{{orderDate}}/g, data.orderDate);
     html = html.replace(/{{totalAmount}}/g, data.totalAmount);
     html = html.replace(/{{year}}/g, new Date().getFullYear().toString());
+    html = html.replace(
+      /{{baseUrl}}/g,
+      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    );
 
     // Dirección
     const addr = data.shippingAddress || {};
