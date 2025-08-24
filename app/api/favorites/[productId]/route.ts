@@ -1,20 +1,16 @@
 import { NextResponse, NextRequest } from "next/server";
 import { favoritesRepository } from "@/lib/repositories/favorites";
-import jwt from "jsonwebtoken";
+import { getUserIdFromRequest } from "@/lib/auth";
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { productId: string } }
 ) {
   try {
-    const token = request.cookies.get("token")?.value;
-
-    if (!token) {
+    const userId = await getUserIdFromRequest(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const userId = (decoded as any).userId;
     await favoritesRepository.removeFavorite(userId, params.productId);
     return NextResponse.json({ message: "Favorite removed" });
   } catch (error) {

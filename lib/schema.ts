@@ -164,9 +164,12 @@ export const orderItems = pgTable("order_items", {
   orderId: varchar("order_id", { length: 50 }).notNull(),
   productId: varchar("product_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   quantity: integer("quantity").notNull(),
   image: varchar("image", { length: 500 }),
+  originalPrice: numeric("original_price", { precision: 10, scale: 2 }).notNull(),
+  finalPrice: numeric("final_price", { precision: 10, scale: 2 }).notNull(),
+  discountType: discountTypeEnum("discount_type"),
+  discountValue: numeric("discount_value", { precision: 10, scale: 2 }),
 });
 
 // Tabla de mensajes de contacto

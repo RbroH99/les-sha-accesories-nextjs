@@ -89,14 +89,10 @@ export default function TiendaPage() {
       selectedCategories.forEach((cat) =>
         url.searchParams.append("categoryId", cat)
       );
-      if (priceRange.min)
-        url.searchParams.set("minPrice", priceRange.min);
-      if (priceRange.max)
-        url.searchParams.set("maxPrice", priceRange.max);
-      if (showDiscounted)
-        url.searchParams.set("hasDiscount", "true");
-      if (showWithImages)
-        url.searchParams.set("hasImages", "true");
+      if (priceRange.min) url.searchParams.set("minPrice", priceRange.min);
+      if (priceRange.max) url.searchParams.set("maxPrice", priceRange.max);
+      if (showDiscounted) url.searchParams.set("hasDiscount", "true");
+      if (showWithImages) url.searchParams.set("hasImages", "true");
       if (selectedAvailability && selectedAvailability !== "all") {
         url.searchParams.set("availabilityType", selectedAvailability);
       }
@@ -108,7 +104,7 @@ export default function TiendaPage() {
 
       const res = await fetch(url.toString());
       const { data, total, totalPages: newTotalPages } = await res.json();
-      setProducts(data);
+      setProducts(Array.isArray(data) ? data : []);
       setTotalProducts(total);
       setTotalPages(newTotalPages);
     } catch (error) {
@@ -161,6 +157,7 @@ export default function TiendaPage() {
       price: product.price,
       image: product.images[0] || "/placeholder.svg?height=300&width=300",
       category: product.categoryId,
+      productId: product.id,
     });
   };
 

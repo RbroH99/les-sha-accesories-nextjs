@@ -49,13 +49,17 @@ export async function GET(request: Request) {
     offset,
   };
 
-  const products = await productsRepository.getAllProducts(filters);
-  const totalProducts = await productsRepository.countAllProducts(filters);
+  const [products, total] = await Promise.all([
+    productsRepository.getAllProducts(filters),
+    productsRepository.countAllProducts(filters),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
 
   return NextResponse.json({
     data: products,
-    total: totalProducts,
-    totalPages: Math.ceil(totalProducts / limit),
+    total,
+    totalPages,
   });
 }
 

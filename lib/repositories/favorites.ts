@@ -15,6 +15,7 @@ export class FavoritesRepository {
       .from(favorites)
       .leftJoin(products, eq(favorites.productId, products.id))
       .where(eq(favorites.userId, userId));
+
     return userFavorites;
   }
 
@@ -27,7 +28,9 @@ export class FavoritesRepository {
   async removeFavorite(userId: string, productId: string) {
     await db
       .delete(favorites)
-      .where(and(eq(favorites.userId, userId), eq(favorites.productId, productId)));
+      .where(
+        and(eq(favorites.userId, userId), eq(favorites.productId, productId))
+      );
   }
 }
 

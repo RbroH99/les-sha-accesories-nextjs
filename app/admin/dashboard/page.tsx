@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,7 +83,8 @@ export default function AdminDashboard() {
     setTheme,
   } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
-  const { orders, loadingOrders, updateOrderStatus, deleteOrder } = useOrders();
+  const { orders, loadingOrders, fetchOrders, updateOrderStatus, deleteOrder } =
+    useOrders();
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const {
     discounts,
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
     createDiscount,
     updateDiscount,
     deleteDiscount,
+    fetchDiscounts,
   } = useDiscounts();
   const [settings, setSettings] = useState({
     siteName: "Lesha",
@@ -100,13 +102,29 @@ export default function AdminDashboard() {
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
+    if (activeTab === "overview" || activeTab === "orders") {
+      fetchOrders();
+    }
+    if (activeTab === "products") {
+      fetchProducts();
+    }
+    if (activeTab === "categories") {
+      fetchCategories();
+      fetchTags();
+    }
+    if (activeTab === "discounts") {
+      fetchDiscounts();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
     const fetchSettings = async () => {
       setLoadingSettings(true);
       try {
         const response = await fetch("/api/settings");
         const data = await response.json();
         if (response.ok) {
-          setSettings(prev => ({ ...prev, ...data }));
+          setSettings((prev) => ({ ...prev, ...data }));
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -273,30 +291,36 @@ export default function AdminDashboard() {
   const [viewingProduct, setViewingProduct] = useState<ProductDetail | null>(
     null
   );
+  const [viewingOrder, setViewingOrder] = useState<any | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<ProductDetail[]>([]);
 
   const itemsPerPageOptions = [5, 10, 20, 50];
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoadingProducts(true);
-      try {
-        const productsRes = await fetch("/api/products");
-        const productsData = await productsRes.json();
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los productos.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingProducts(false);
+  const fetchProducts = useCallback(async () => {
+    setLoadingProducts(true);
+    try {
+      const productsRes = await fetch("/api/products");
+      const productsData = await productsRes.json();
+      if (Array.isArray(productsData.data)) {
+        setProducts(productsData.data);
+      } else {
+        console.error(
+          "La respuesta de la API de productos no es un array:",
+          productsData
+        );
+        setProducts([]);
       }
-    };
-
-    fetchProducts();
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los productos.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingProducts(false);
+    }
   }, [toast]);
 
   // Filter products
@@ -667,12 +691,12 @@ export default function AdminDashboard() {
   const [newlyUploaded, setNewlyUploaded] = useState<string[]>([]);
 
   const handleMediaChange = (media: any[]) => {
-    const newUrls = media.map(m => m.url);
-    const oldUrls = (editingProduct?.images || []);
-    const trulyNew = newUrls.filter(url => !oldUrls.includes(url));
-    
-    setNewlyUploaded(prev => [...new Set([...prev, ...trulyNew])]);
-    setNewProduct(prev => ({ ...prev, images: newUrls }));
+    const newUrls = media.map((m) => m.url);
+    const oldUrls = editingProduct?.images || [];
+    const trulyNew = newUrls.filter((url) => !oldUrls.includes(url));
+
+    setNewlyUploaded((prev) => [...new Set([...prev, ...trulyNew])]);
+    setNewProduct((prev) => ({ ...prev, images: newUrls }));
   };
 
   const cleanupImages = async () => {
@@ -750,13 +774,15 @@ export default function AdminDashboard() {
           body: JSON.stringify(productData),
         });
       }
-      
+
       result = await response.json();
 
       if (response.ok) {
         toast({
           title: `Producto ${editingProduct ? "actualizado" : "agregado"}`,
-          description: `El producto se ${editingProduct ? "actualizó" : "agregó"} correctamente`,
+          description: `El producto se ${
+            editingProduct ? "actualizó" : "agregó"
+          } correctamente`,
         });
         if (editingProduct) {
           setProducts((prev) =>
@@ -765,14 +791,33 @@ export default function AdminDashboard() {
             )
           );
         } else {
-          setProducts((prev) => [...prev, result.product]);
+          // Construct the new product object to add to the state
+          const newProductFull: ProductDetail = {
+            ...productData,
+            id: result.id, // The API returns the id
+            isActive: true,
+            isNew: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            // Add any other missing default properties for ProductDetail type
+            tags: [],
+            categoryName:
+              categories.find((c) => c.id === productData.categoryId)?.name ||
+              "",
+            discountValue: null,
+            discountType: null,
+            finalPrice: productData.price,
+          };
+          setProducts((prev) => [...prev, newProductFull]);
         }
         resetProductForm();
         setNewlyUploaded([]); // Clear uploaded images on success
       } else {
         toast({
           title: "Error",
-          description: result.error || `Error al ${editingProduct ? "actualizar" : "agregar"} producto`,
+          description:
+            result.error ||
+            `Error al ${editingProduct ? "actualizar" : "agregar"} producto`,
           variant: "destructive",
         });
         await cleanupImages(); // Cleanup images on failure
@@ -957,7 +1002,6 @@ export default function AdminDashboard() {
                 { id: "products", label: "Productos", icon: Package },
                 { id: "categories", label: "Categorías", icon: Folder },
                 { id: "discounts", label: "Descuentos", icon: Percent },
-                { id: "themes", label: "Temas", icon: Palette },
                 { id: "settings", label: "Configuración", icon: Save },
               ].map((tab) => (
                 <Button
@@ -1002,13 +1046,12 @@ export default function AdminDashboard() {
           onValueChange={setActiveTab}
           className="space-y-4 sm:space-y-6"
         >
-          <TabsList className="hidden md:grid w-full grid-cols-7">
+          <TabsList className="hidden md:grid w-full grid-cols-6">
             <TabsTrigger value="overview">Resumen</TabsTrigger>
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Productos</TabsTrigger>
             <TabsTrigger value="categories">Categorías</TabsTrigger>
             <TabsTrigger value="discounts">Descuentos</TabsTrigger>
-            <TabsTrigger value="themes">Temas</TabsTrigger>
             <TabsTrigger value="settings">Configuración</TabsTrigger>
           </TabsList>
 
@@ -1055,7 +1098,8 @@ export default function AdminDashboard() {
                   <Label htmlFor="maintenanceMode">Modo Mantenimiento</Label>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Si está activo, los visitantes verán una página de mantenimiento en lugar de la tienda.
+                  Si está activo, los visitantes verán una página de
+                  mantenimiento en lugar de la tienda.
                 </p>
               </CardContent>
               <div className="border-t px-6 py-4">
@@ -1217,6 +1261,7 @@ export default function AdminDashboard() {
                           variant="outline"
                           size="sm"
                           className="w-full sm:w-auto"
+                          onClick={() => setViewingOrder(order)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalles
@@ -1227,6 +1272,121 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+            {viewingOrder && (
+              <Dialog
+                open={!!viewingOrder}
+                onOpenChange={() => setViewingOrder(null)}
+              >
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Detalles del Pedido</DialogTitle>
+                    <DialogDescription>
+                      ID del Pedido: {viewingOrder.id}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold">Información del Cliente</h3>
+                      <p>
+                        <strong>Nombre:</strong> {viewingOrder.customerName}
+                      </p>
+                      <p>
+                        <strong>Email:</strong> {viewingOrder.customerEmail}
+                      </p>
+                      <p>
+                        <strong>Teléfono:</strong> {viewingOrder.customerPhone}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Dirección de Envío</h3>
+                      {viewingOrder.shippingAddress ? (
+                        <>
+                          <p>
+                            {viewingOrder.shippingAddress.address
+                              ? viewingOrder.shippingAddress.address
+                              : "No especificada"}
+                          </p>
+                          <p>
+                            {viewingOrder.shippingAddress.city},{" "}
+                            {viewingOrder.shippingAddress.state}{" "}
+                            {viewingOrder.shippingAddress.postal_code}
+                          </p>
+                          <p>{viewingOrder.shippingAddress.country}</p>
+                        </>
+                      ) : (
+                        <p>No hay dirección de envío disponible.</p>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Artículos del Pedido</h3>
+                      {viewingOrder.items && viewingOrder.items.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[80px]">Imagen</TableHead>
+                              <TableHead>Producto</TableHead>
+                              <TableHead className="text-center">Cantidad</TableHead>
+                              <TableHead className="text-right">Precio Original</TableHead>
+                              <TableHead className="text-right">Precio Final</TableHead>
+                              <TableHead className="text-right">Total Artículo</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {viewingOrder.items.map((item: any, index: number) => {
+                              const discountText = item.discountValue
+                                ? item.discountType === 'percentage'
+                                  ? `${item.discountValue}%`
+                                  : `${item.discountValue.toFixed(2)}`
+                                : 'N/A';
+                              const totalItemPrice = (item.finalPrice || 0) * (item.quantity || 0);
+
+                              return (
+                                <TableRow key={`${item.id}-${index}`}>
+                                  <TableCell>
+                                    <img
+                                      src={item.image || '/placeholder.jpg'}
+                                      alt={item.name}
+                                      className="w-16 h-16 object-cover rounded-md"
+                                      onError={(e) => (e.currentTarget.src = '/placeholder.jpg')}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="font-medium">
+                                    <div>{item.name}</div>
+                                    {item.discountValue && (
+                                      <div className="text-xs text-muted-foreground">
+                                        Descuento: {discountText}
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">{item.quantity}</TableCell>
+                                  <TableCell className="text-right">
+                                    ${(item.originalPrice || 0).toFixed(2)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-semibold">
+                                    ${(item.finalPrice || 0).toFixed(2)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-bold">
+                                    ${totalItemPrice.toFixed(2)}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <p>No hay artículos en este pedido.</p>
+                      )}
+                    </div>
+                    <div className="text-right mt-4">
+                      <p className="font-bold text-xl">
+                        Total del Pedido: $
+                        {(viewingOrder.totalAmount || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           <TabsContent value="products" className="space-y-4 sm:space-y-6">
@@ -1241,11 +1401,16 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl sm:text-2xl font-bold">
-                    {products.length}
+                    {Array.isArray(products) ? products.length : 0}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {products.filter((p) => p?.isActive).length} activos •{" "}
-                    {products.filter((p) => !p?.isActive).length} inactivos
+                    {Array.isArray(products)
+                      ? `${
+                          products.filter((p) => p?.isActive).length
+                        } activos • ${
+                          products.filter((p) => !p?.isActive).length
+                        } inactivos`
+                      : "Cargando..."}
                   </div>
                 </CardContent>
               </Card>
@@ -1267,13 +1432,24 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <div className="text-xl sm:text-2xl font-bold text-red-600">
-                {
-                  products.filter(
-                    (p) => p.stock < 10 && p.availabilityType !== "order_only"
-                  ).length
-                }
-              </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">
+                    Poco Stock
+                  </CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                    {
+                      products.filter(
+                        (p) =>
+                          p.stock < 10 && p.availabilityType !== "order_only"
+                      ).length
+                    }
+                  </div>
+                </CardContent>
+              </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1762,10 +1938,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                               <div>
-                                <Label
-                                  htmlFor="dimensions"
-                                  className="text-sm"
-                                >
+                                <Label htmlFor="dimensions" className="text-sm">
                                   Dimensiones
                                 </Label>
                                 <Input
@@ -1933,13 +2106,13 @@ export default function AdminDashboard() {
                               Imágenes y Videos del Producto
                             </h3>
                             <ImageUpload
-                              initialMedia={newProduct.images.map(url => ({ 
-                                id: url, 
-                                url, 
-                                fileId: url.split("/").pop()?.split(".")[0], 
-                                type: 'image', 
-                                name: '', 
-                                size: 0 
+                              initialMedia={newProduct.images.map((url) => ({
+                                id: url,
+                                url,
+                                fileId: url.split("/").pop()?.split(".")[0],
+                                type: "image",
+                                name: "",
+                                size: 0,
                               }))}
                               onMediaChange={handleMediaChange}
                               maxImages={8}

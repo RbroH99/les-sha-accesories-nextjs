@@ -2,8 +2,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Package, Mail, ArrowRight } from "lucide-react"
+import { settingsRepository } from "@/lib/repositories/settings"
 
-export default function PedidoConfirmadoPage() {
+export default async function PedidoConfirmadoPage() {
+  const settings = await settingsRepository.getAllSettings()
+  const shippingEnabled = settings.find(s => s.key === 'shippingEnabled')?.value ?? true
+  const shippingMessage = settings.find(s => s.key === 'shippingMessage')?.value ?? "3-5 días hábiles"
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -73,7 +78,11 @@ export default function PedidoConfirmadoPage() {
                   <Package className="w-8 h-8 text-amber-600" />
                   <div className="text-left">
                     <p className="font-medium text-gray-900">Tiempo de entrega</p>
-                    <p className="text-sm text-gray-600">3-5 días hábiles</p>
+                    {shippingEnabled ? (
+                      <p className="text-sm text-gray-600">{shippingMessage}</p>
+                    ) : (
+                      <p className="text-sm text-red-600">Los envíos están desactivados. Nos pondremos en contacto contigo.</p>
+                    )}
                   </div>
                 </div>
               </div>

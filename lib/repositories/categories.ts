@@ -38,8 +38,6 @@ export class CategoriesRepository {
         updatedAt: now,
       };
 
-      console.log("INSERTING CATEGORY:", values); // 👈 Esto te dirá qué estás enviando
-
       await db.insert(categories).values(values);
       return id;
     } catch (error) {

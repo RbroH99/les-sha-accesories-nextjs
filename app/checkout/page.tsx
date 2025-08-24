@@ -96,16 +96,9 @@ export default function CheckoutPage() {
           },
         }),
         items: items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
+          productId: item.productId, // Enviar solo productId y quantity
           quantity: item.quantity,
-          image: item.image,
         })),
-        subtotal: subtotal,
-        taxAmount: taxAmount,
-        totalAmount: finalTotal,
-        paymentMethod: settings.paymentEnabled ? "online" : "offline",
         notes: formData.notes,
       }
 

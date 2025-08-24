@@ -80,25 +80,25 @@ export function DiscountsProvider({ children }: { children: ReactNode }) {
 
   const createDiscount = async (
     data: Omit<Discount, "id" | "createdAt" | "updatedAt">
-  ): Promise<string | undefined> => {
+  ): Promise<Discount | undefined> => {
     try {
       const response = await fetch("/api/discounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const result = await response.json();
+      const newDiscount = await response.json();
       if (response.ok) {
-        await fetchDiscounts(); // Re-fetch to get the new discount with ID
+        setDiscounts((prev) => [...prev, newDiscount]);
         toast({
           title: "Descuento creado",
           description: `Descuento '${data.name}' creado exitosamente.`,
         });
-        return result.id;
+        return newDiscount;
       } else {
         toast({
           title: "Error",
-          description: result.error || "Error al crear descuento.",
+          description: newDiscount.error || "Error al crear descuento.",
           variant: "destructive",
         });
         return undefined;

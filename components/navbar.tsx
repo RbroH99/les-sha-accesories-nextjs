@@ -31,9 +31,6 @@ import Image from "next/image";
 const navigation = [
   { name: "Inicio", href: "/" },
   { name: "Tienda", href: "/tienda" },
-  { name: "Collares", href: "/tienda?categoria=collares" },
-  { name: "Aretes", href: "/tienda?categoria=aretes" },
-  { name: "Pulseras", href: "/tienda?categoria=pulseras" },
   { name: "Sobre Mí", href: "/sobre-mi" },
   { name: "Contacto", href: "/contacto" },
 ];
@@ -55,9 +52,9 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="rounded-full overflow-hidden w-12 h-12 md:w-16 md:h-16 flex-shrink-0 border-2 border-white relative">
+            <div className="rounded-full overflow-hidden w-12 h-12 md:w-16 md:h-16 flex-shrink-0 border-2 bg-[#ADD8E6] border-white relative">
               <Image
-                src="/Lesha.jpg"
+                src="/Method Draw Image (1).png"
                 alt="LesSha Logo"
                 fill // Ocupa todo el espacio del contenedor padre
                 className="object-cover"
@@ -66,7 +63,7 @@ export function Navbar() {
               />
             </div>
             <span className="font-bold text-xl text-gray-900 font-playfair">
-              LesSha
+              Les Sha
             </span>
           </Link>
 

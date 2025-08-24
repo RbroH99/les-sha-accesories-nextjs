@@ -20,13 +20,14 @@ export type OrderStatus =
   | "cancelado";
 
 export interface OrderItem {
-  id: number;
-  orderId: string;
-  productId: string;
+  id: string; // Corresponds to productId
   name: string;
-  price: number;
   quantity: number;
-  image?: string;
+  image: string;
+  originalPrice: number;
+  finalPrice: number;
+  discountType?: "percentage" | "fixed";
+  discountValue?: number;
 }
 
 export interface Order {
@@ -56,7 +57,7 @@ interface OrdersContextType {
   loadingOrders: boolean;
   fetchOrders: () => Promise<void>;
   createOrder: (
-    orderData: Omit<Order, "id" | "userId" | "createdAt" | "updatedAt" | "status">
+    orderData: any // Simplified for now, should be CreateOrderDto from repository
   ) => Promise<string | undefined>;
   updateOrderStatus: (
     orderId: string,
@@ -113,14 +114,25 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       return undefined;
     }
 
+    // Mapear los items para que coincidan con la estructura del DTO del backend
+    const orderToCreate = {
+      ...orderData,
+      userId: user.id,
+      items: orderData.items.map(item => ({
+        productId: item.productId, // Correctamente mapeado
+        quantity: item.quantity,
+      })),
+    };
+
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...orderData, userId: user.id }),
+        body: JSON.stringify(orderToCreate),
       });
       const result = await response.json();
       if (response.ok) {
+        // Aquí asumimos que el backend devuelve la orden completa y actualizada
         setOrders((prev) => [...prev, result.order]);
         toast({
           title: "Orden creada",

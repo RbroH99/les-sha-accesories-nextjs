@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Heart, ShoppingBag, ArrowLeft } from "lucide-react"
-import { useFavorites } from "@/contexts/favorites-context"
-import { useCart } from "@/contexts/cart-context"
-import { useAuth } from "@/contexts/auth-context"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Heart, ShoppingBag, ArrowLeft } from "lucide-react";
+import { useFavorites } from "@/contexts/favorites-context";
+import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function FavoritosPage() {
   const { favorites, removeFromFavorites, loading } = useFavorites();
@@ -42,15 +42,17 @@ export default function FavoritosPage() {
 
   if (loading) {
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="container mx-auto px-4">
-                <div className="max-w-2xl mx-auto text-center py-16">
-                    <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Cargando tus favoritos...</h1>
-                </div>
-            </div>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center py-16">
+            <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Cargando tus favoritos...
+            </h1>
+          </div>
         </div>
-    )
+      </div>
+    );
   }
 
   if (!user) {
@@ -63,9 +65,12 @@ export default function FavoritosPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center py-16">
             <Heart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">No tienes favoritos aún</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              No tienes favoritos aún
+            </h1>
             <p className="text-gray-600 mb-8">
-              Explora nuestra tienda y agrega productos a tus favoritos para encontrarlos fácilmente después.
+              Explora nuestra tienda y agrega productos a tus favoritos para
+              encontrarlos fácilmente después.
             </p>
             <Button asChild className="bg-rose-600 hover:bg-rose-700">
               <Link href="/tienda">Explorar Tienda</Link>
@@ -73,7 +78,7 @@ export default function FavoritosPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -86,9 +91,12 @@ export default function FavoritosPage() {
               Volver a la Tienda
             </Link>
           </Button>
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 font-playfair">Mis Favoritos</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 font-playfair">
+            Mis Favoritos
+          </h1>
           <p className="text-gray-600 mt-2">
-            Tienes {favorites.length} producto{favorites.length !== 1 ? "s" : ""} en tus favoritos
+            Tienes {favorites.length} producto
+            {favorites.length !== 1 ? "s" : ""} en tus favoritos
           </p>
         </div>
 
@@ -97,6 +105,7 @@ export default function FavoritosPage() {
             <Card
               key={favorite.id}
               className="group hover:shadow-lg transition-shadow duration-300 border-0 shadow-md bg-white"
+              onClick={() => router.push(`/producto/${favorite.productId}`)}
             >
               <CardContent className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
@@ -104,7 +113,13 @@ export default function FavoritosPage() {
                     variant="ghost"
                     size="icon"
                     className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white"
-                    onClick={async () => await handleRemoveFromFavorites(favorite.id, favorite.name)}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await handleRemoveFromFavorites(
+                        favorite.id,
+                        favorite.name
+                      );
+                    }}
                   >
                     <Heart className="w-4 h-4 fill-rose-600 text-rose-600" />
                   </Button>
@@ -126,7 +141,9 @@ export default function FavoritosPage() {
                     {favorite.name}
                   </h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-rose-600">${favorite.price.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-rose-600">
+                      ${Number(favorite.price).toFixed(2)}
+                    </span>
                     <Button
                       size="sm"
                       className="bg-rose-600 hover:bg-rose-700"
@@ -143,5 +160,5 @@ export default function FavoritosPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

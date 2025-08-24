@@ -17,6 +17,7 @@ export interface FavoriteItem {
   price: number;
   image: string;
   category: string;
+  productId: string;
 }
 
 interface FavoritesContextType {

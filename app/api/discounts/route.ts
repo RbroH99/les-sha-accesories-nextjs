@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 import { discountsRepository } from "@/lib/repositories/discounts";
 import { z } from "zod";
 
+// Esquema actualizado para validar los datos de entrada
 const discountSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, "El nombre es requerido"),
   description: z.string().optional(),
   type: z.enum(["percentage", "fixed"]),
-  value: z.number(),
-  reason: z.string(),
-  startDate: z.date().optional(),
-  endDate: z.date().optional(),
+  value: z.number().positive("El valor debe ser positivo"),
+  reason: z.string().min(1, "La razón es requerida"),
+  startDate: z.string().optional(), // Aceptar string para fechas
+  endDate: z.string().optional(),   // Aceptar string para fechas
   isActive: z.boolean(),
   productIds: z.array(z.string()),
   isGeneric: z.boolean(),
@@ -40,15 +41,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const discountId = await discountsRepository.createDiscount({
-      ...parsedData.data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // Llamar al repositorio con los datos validados
+    const newDiscount = await discountsRepository.createDiscount(parsedData.data);
 
-    // The repository doesn't return the created object, so we can't return it here.
-    // We'll just return the ID.
-    return NextResponse.json({ id: discountId }, { status: 201 });
+    // Devolver el objeto completo del descuento creado
+    return NextResponse.json(newDiscount, { status: 201 });
   } catch (error) {
     console.error("Error creating discount:", error);
     return NextResponse.json(
