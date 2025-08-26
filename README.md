@@ -110,6 +110,16 @@ Estas credenciales son para el servicio de gestión de imágenes.
 2.  **Obtén las credenciales:** En el panel de control, ve a `Developer -> API Keys`.
 3.  **Copia las claves:** Encontrarás tu `Public Key`, `Private Key` y `URL-endpoint`. Cópialas en las variables correspondientes.
 
+#### `TELEGRAM_*` (Opcional)
+
+Configuración para recibir notificaciones de nuevas órdenes en un chat de Telegram.
+
+1.  **Crea un Bot:** Habla con el bot `@BotFather` en Telegram y sigue los pasos para crear un nuevo bot. Al final, te dará un **token de acceso**.
+2.  **Obtén tu Chat ID:** Habla con el bot `@userinfobot` en Telegram. Te mostrará tu **Chat ID**.
+3.  **Rellena las variables:**
+    - `TELEGRAM_BOT_TOKEN`: El token de acceso que te dio `BotFather`.
+    - `TELEGRAM_CHAT_ID`: Tu ID de chat.
+
 #### `NEXT_PUBLIC_BASE_URL`
 
 La URL base de tu aplicación. Para desarrollo local, déjala como `http://localhost:3000`.
