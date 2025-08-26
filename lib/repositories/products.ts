@@ -37,6 +37,8 @@ export interface ProductDetail {
   warrantyDuration: number | null;
   warrantyUnit: "days" | "months" | "years" | null;
   discountId: string | null;
+  averageRating: number;
+  ratingCount: number;
 }
 
 export interface ProductWithRelations {
@@ -60,6 +62,8 @@ export interface ProductWithRelations {
   warrantyDuration?: number;
   warrantyUnit?: "days" | "months" | "years";
   discountId?: string;
+  averageRating: number;
+  ratingCount: number;
   tagIds: string[];
   createdAt: string;
   updatedAt: string;
@@ -154,6 +158,8 @@ export class ProductsRepository {
           warrantyDuration: products.warrantyDuration,
           warrantyUnit: products.warrantyUnit,
           discountId: products.discountId,
+          averageRating: products.averageRating,
+          ratingCount: products.ratingCount,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
         })
@@ -212,6 +218,8 @@ export class ProductsRepository {
             categoryName: product.categoryName ?? undefined,
             story: product.story ?? undefined,
             price: Number.parseFloat(product.price),
+            averageRating: Number.parseFloat(product.averageRating),
+            ratingCount: product.ratingCount,
             images: product.images || [], // Asegurar que siempre sea un array
             tagIds: productTagsResult.map((pt) => pt.tagId),
             createdAt: product.createdAt.toISOString(),
@@ -291,6 +299,8 @@ export class ProductsRepository {
           warrantyDuration: products.warrantyDuration,
           warrantyUnit: products.warrantyUnit,
           discountId: products.discountId,
+          averageRating: products.averageRating,
+          ratingCount: products.ratingCount,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
         })
@@ -323,6 +333,8 @@ export class ProductsRepository {
         categoryName: product.categoryName ?? undefined,
         story: product.story ?? undefined,
         price: Number.parseFloat(product.price),
+        averageRating: Number.parseFloat(product.averageRating),
+        ratingCount: product.ratingCount,
         images: product.images || [], // Asegurar que siempre sea un array
         tagIds: productTagsResult.map((pt) => pt.tagId),
         createdAt: product.createdAt.toISOString(),
@@ -364,6 +376,8 @@ export class ProductsRepository {
         warrantyDuration: data.warrantyDuration,
         warrantyUnit: data.warrantyUnit,
         discountId: data.discountId,
+        averageRating: "0",
+        ratingCount: 0,
       });
 
       // Insertar tags del producto
@@ -414,6 +428,8 @@ export class ProductsRepository {
           warrantyDuration: data.warrantyDuration,
           warrantyUnit: data.warrantyUnit,
           discountId: data.discountId,
+          averageRating: data.averageRating?.toString(),
+          ratingCount: data.ratingCount,
         })
         .where(eq(products.id, id));
 
@@ -482,6 +498,8 @@ export class ProductsRepository {
         warrantyDuration: 6,
         warrantyUnit: "months",
         discountId: undefined,
+        averageRating: 4.5,
+        ratingCount: 2,
         tagIds: ["tag_1", "tag_4"],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -502,6 +520,8 @@ export class ProductsRepository {
         hasWarranty: true,
         warrantyDuration: 1,
         warrantyUnit: "years",
+        averageRating: 0,
+        ratingCount: 0,
         tagIds: ["tag_2"],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

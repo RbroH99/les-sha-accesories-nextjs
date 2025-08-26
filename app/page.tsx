@@ -1,58 +1,45 @@
-"use client"
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Star, Heart, ShoppingBag, Sparkles } from "lucide-react"
-import { useFavorites } from "@/contexts/favorites-context"
-import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Star, Heart, ShoppingBag, Sparkles } from "lucide-react";
+import { useFavorites } from "@/contexts/favorites-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ProductWithRelations } from "@/lib/repositories/products";
+import { StarRating } from "@/components/ui/star-rating";
 
-// Datos de ejemplo para productos destacados
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Collar Luna Dorada",
-    price: 45.0,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "Collares",
-    rating: 5,
-    isNew: true,
-  },
-  {
-    id: 2,
-    name: "Aretes Cristal Rosa",
-    price: 28.0,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "Aretes",
-    rating: 5,
-    isNew: false,
-  },
-  {
-    id: 3,
-    name: "Pulsera Perlas Naturales",
-    price: 35.0,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "Pulseras",
-    rating: 4,
-    isNew: true,
-  },
-  {
-    id: 4,
-    name: "Anillo Flor Vintage",
-    price: 22.0,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "Accesorios",
-    rating: 5,
-    isNew: false,
-  },
-]
 
 export default function HomePage() {
-  const { toggleFavorite, isFavorite } = useFavorites()
-  const { user } = useAuth()
-  const router = useRouter()
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [featuredProducts, setFeaturedProducts] = useState<
+    ProductWithRelations[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        const res = await fetch("/api/products?sortBy=newest&limit=4");
+        if (res.ok) {
+          const { data } = await res.json();
+          setFeaturedProducts(data);
+        }
+      } catch (error) {
+        console.error("Error fetching featured products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -114,75 +101,115 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="group hover:shadow-lg transition-shadow duration-300 border-0 shadow-md cursor-pointer"
-                onClick={() => router.push(`/producto/${product.id}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="relative overflow-hidden rounded-t-lg">
-                    {product.isNew && (
-                      <Badge className="absolute top-3 left-3 z-10 bg-amber-500 hover:bg-amber-600">Nuevo</Badge>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFavorite(product.id)
-                      }}
-                    >
-                      <Heart className={`w-4 h-4 ${isFavorite(product.id) ? "fill-rose-500 text-rose-500" : ""}`} />
-                    </Button>
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      width={300}
-                      height={300}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {product.category}
-                      </Badge>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${
-                              i < product.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"
-                            }`}
-                          />
-                        ))}
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i} className="border-0 shadow-md">
+                  <CardContent className="p-0">
+                    <div className="animate-pulse bg-gray-200 h-64 w-full rounded-t-lg"></div>
+                    <div className="p-4 space-y-3">
+                      <div className="animate-pulse bg-gray-200 h-4 w-1/2 rounded"></div>
+                      <div className="animate-pulse bg-gray-200 h-6 w-3/4 rounded"></div>
+                      <div className="flex items-center justify-between">
+                        <div className="animate-pulse bg-gray-200 h-8 w-1/3 rounded"></div>
+                        <div className="animate-pulse bg-gray-200 h-8 w-1/4 rounded"></div>
                       </div>
                     </div>
-                    <h3 className="font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-rose-600">${product.price.toFixed(2)}</span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <Card
+                  key={product.id}
+                  className="group hover:shadow-lg transition-shadow duration-300 border-0 shadow-md cursor-pointer"
+                  onClick={() => router.push(`/producto/${product.id}`)}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative overflow-hidden rounded-t-lg">
+                      {product.isNew && (
+                        <Badge className="absolute top-3 left-3 z-10 bg-amber-500 hover:bg-amber-600">
+                          Nuevo
+                        </Badge>
+                      )}
                       <Button
-                        size="sm"
-                        className="bg-rose-600 hover:bg-rose-700"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-3 right-3 z-10 bg-white/80 hover:bg-white"
                         onClick={(e) => {
-                          e.stopPropagation()
-                          // código del botón
+                          e.stopPropagation();
+                          toggleFavorite({
+                            id: product.id,
+                            name: product.name,
+                            price: product.price,
+                            image:
+                              product.images && product.images.length > 0
+                                ? product.images[0]
+                                : "/placeholder.svg",
+                            category: product.categoryName || "Sin categoría",
+                          });
                         }}
                       >
-                        <ShoppingBag className="w-3 h-3 mr-1" />
-                        Agregar
+                        <Heart
+                          className={`w-4 h-4 ${
+                            isFavorite(product.id)
+                              ? "fill-rose-500 text-rose-500"
+                              : ""
+                          }`}
+                        />
                       </Button>
+                      <Image
+                        src={
+                          product.images.length > 0
+                            ? product.images[0]
+                            : "/placeholder.svg"
+                        }
+                        alt={product.name}
+                        width={300}
+                        height={300}
+                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          {product.categoryName}
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <StarRating
+                            rating={product.averageRating}
+                            readOnly
+                            size={12}
+                          />
+                        </div>
+                      </div>
+                      <h3 className="font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-rose-600">
+                          ${product.price.toFixed(2)}
+                        </span>
+                        <Button
+                          size="sm"
+                          className="bg-rose-600 hover:bg-rose-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // código del botón
+                          }}
+                        >
+                          <ShoppingBag className="w-3 h-3 mr-1" />
+                          Agregar
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Button asChild variant="outline" size="lg">

@@ -33,6 +33,19 @@ import { useToast } from "@/hooks/use-toast";
 import { type ProductDetail } from "@/lib/repositories/products";
 import { getOptimizedImageUrl } from "@/lib/imagekit-client";
 import { useCategories } from "@/contexts/categories-context";
+import { StarRating } from "@/components/ui/star-rating";
+import { RatingForm } from "@/components/ui/rating-form";
+
+type Rating = {
+  id: string;
+  userId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user?: {
+    username: string;
+  };
+};
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -48,46 +61,81 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [ratings, setRatings] = useState<Rating[]>([]);
 
   const { categories } = useCategories();
 
-  useEffect(() => {
-    const fetchProductData = async () => {
-      setLoading(true);
-      try {
-        const productId = params.id;
+  const fetchProductData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const productId = params.id;
 
-        const res = await fetch(`/api/products/${productId}`);
-        if (!res.ok) throw new Error("Producto no encontrado");
+      const productRes = await fetch(`/api/products/${productId}`);
+      if (!productRes.ok) throw new Error("Producto no encontrado");
+      const foundProduct = await productRes.json();
+      setProduct(foundProduct);
 
-        const foundProduct = await res.json();
-        setProduct(foundProduct);
-
-        // Obtener productos relacionados (suponiendo que tienes endpoint que recibe categoryId)
-        if (foundProduct.categoryId) {
-          const relatedRes = await fetch(
-            `/api/products?categoryId=${foundProduct.categoryId}&excludeId=${foundProduct.id}`
-          );
-          if (relatedRes.ok) {
-            const related = await relatedRes.json();
-            setRelatedProducts(related);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-        router.push("/tienda");
-        toast({
-          title: "Error",
-          description: "No se pudo cargar la información del producto.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+      const ratingsRes = await fetch(`/api/products/${productId}/ratings`);
+      if (ratingsRes.ok) {
+        const foundRatings = await ratingsRes.json();
+        setRatings(foundRatings);
       }
-    };
 
-    fetchProductData();
+      if (foundProduct.categoryId) {
+        const relatedRes = await fetch(
+          `/api/products?categoryId=${foundProduct.categoryId}&excludeId=${foundProduct.id}`
+        );
+        if (relatedRes.ok) {
+          const related = await relatedRes.json();
+          setRelatedProducts(related);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching product data:", error);
+      router.push("/tienda");
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la información del producto.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [params.id, router, toast]);
+
+
+  useEffect(() => {
+    fetchProductData();
+  }, [fetchProductData]);
+
+  const handleRatingSubmit = async (rating: number, comment: string) => {
+    if (!product) return;
+
+    try {
+      const res = await fetch(`/api/products/${product.id}/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, comment }),
+      });
+
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error);
+      }
+
+      toast({
+        title: "Reseña enviada",
+        description: "Gracias por tu reseña.",
+      });
+      fetchProductData(); // Re-fetch product data to update ratings
+    } catch (error: any) {
+      toast({
+        title: "Error al enviar la reseña",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleAddToCart = () => {
     if (!user) {
@@ -361,6 +409,13 @@ export default function ProductDetailPage() {
                 {product.name}
               </h1>
 
+              <div className="flex items-center gap-2 mb-4">
+                <StarRating rating={product.averageRating} readOnly />
+                <span className="text-gray-600 text-sm">
+                  ({product.ratingCount} reseñas)
+                </span>
+              </div>
+
               <p className="text-gray-600 text-lg mb-4">
                 {product.description}
               </p>
@@ -594,9 +649,35 @@ export default function ProductDetailPage() {
 
               <TabsContent value="reviews" className="mt-6">
                 <div className="space-y-6">
-                  <p className="text-gray-500 text-center py-8">
-                    Aún no hay reseñas para este producto.
-                  </p>
+                  {ratings.length > 0 ? (
+                    ratings.map((rating) => (
+                      <div key={rating.id} className="border-b pb-4">
+                        <div className="flex items-center mb-2">
+                          <StarRating rating={rating.rating} readOnly />
+                          <span className="ml-2 font-semibold">
+                            {rating.user?.username || "Anónimo"}
+                          </span>
+                        </div>
+                        <p className="text-gray-600">{rating.comment}</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          {new Date(rating.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">
+                      Aún no hay reseñas para este producto.
+                    </p>
+                  )}
+                </div>
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Escribe una reseña
+                  </h3>
+                  <RatingForm
+                    productId={product.id}
+                    onSubmit={handleRatingSubmit}
+                  />
                 </div>
               </TabsContent>
             </Tabs>

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { sendEmail } from "@/lib/email";
 import { getOrderConfirmationEmailHtml } from "@/lib/email-template";
 import { format } from "date-fns";
+import { sendTelegramOrderNotification } from "@/lib/telegram";
 
 const createOrderSchema = z.object({
   userId: z.string(),
@@ -92,6 +93,13 @@ export async function POST(request: Request) {
       });
     } catch (emailError) {
       console.error("Failed to send confirmation email:", emailError);
+    }
+
+    // 🚀 Enviar notificación a Telegram (sin bloquear la respuesta)
+    try {
+      await sendTelegramOrderNotification(createdOrder);
+    } catch (telegramError) {
+      console.error("Failed to send Telegram notification:", telegramError);
     }
 
     return NextResponse.json({ order: createdOrder }, { status: 201 });

@@ -89,6 +89,19 @@ export const products = pgTable("products", {
   warrantyDuration: integer("warranty_duration"),
   warrantyUnit: warrantyUnitEnum("warranty_unit"),
   discountId: varchar("discount_id", { length: 50 }),
+  averageRating: numeric("average_rating", { precision: 3, scale: 2 }).default("0").notNull(),
+  ratingCount: integer("rating_count").default(0).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+// Tabla de ratings
+export const ratings = pgTable("ratings", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  productId: varchar("product_id", { length: 50 }).notNull(),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -217,6 +230,18 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   orderItems: many(orderItems),
   favorite: one(favorites),
   cartItem: one(cartItems),
+  ratings: many(ratings),
+}));
+
+export const ratingsRelations = relations(ratings, ({ one }) => ({
+  product: one(products, {
+    fields: [ratings.productId],
+    references: [products.id],
+  }),
+  user: one(users, {
+    fields: [ratings.userId],
+    references: [users.id],
+  }),
 }));
 
 export const productTagsRelations = relations(productTags, ({ one }) => ({
@@ -247,6 +272,7 @@ export const discountProductsRelations = relations(
 export const usersRelations = relations(users, ({ one, many }) => ({
   orders: many(orders),
   favorites: many(favorites),
+  ratings: many(ratings),
   cart: one(carts, {
     fields: [users.id],
     references: [carts.userId],
