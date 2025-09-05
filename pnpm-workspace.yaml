@@ -1,0 +1,6 @@
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - better-sqlite3
+  - bufferutil
+  - esbuild
+  - sqlite3

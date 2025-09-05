@@ -1,0 +1,15 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+ <title>Les Sha Accessories Logo</title>
+
+ <!-- Background Circle -->
+ <circle cx="100" cy="100" r="98" fill="white" stroke="#ADD8E6" stroke-width="4"/>
+
+ <!-- Logo Group - Scaled and Centered -->
+ <g transform="scale(1.15) translate(-15, -20)">
+  <title>Layer 1</title>
+  <path stroke="#00008B" id="svg_2" fill="none" stroke-width="4" d="m29.76748,55.58142c52.49997,67.82941 87.49995,67.82941 139.99992,0"/>
+  <circle id="svg_3" fill="#00008B" r="5" cy="100" cx="100"/>
+  <circle id="svg_4" stroke-width="4" stroke="#00008B" fill="none" r="25" cy="133.48838" cx="100.93023"/>
+  <text id="svg_5" fill="#00008B" font-family="serif" font-size="28" text-anchor="middle" y="141.48838" x="100.93023">S</text>
+ </g>
+</svg>
