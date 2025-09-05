@@ -1,1 +1,0 @@
-ALTER TABLE "products" ADD COLUMN "has_returns" boolean DEFAULT false NOT NULL;
