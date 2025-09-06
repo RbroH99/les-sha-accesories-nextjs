@@ -579,6 +579,31 @@ export default function AdminDashboard() {
     });
   };
 
+  // Cargar el estado del formulario del producto desde localStorage al montar
+  useEffect(() => {
+    const savedProductForm = localStorage.getItem("unsavedProductForm");
+    if (savedProductForm) {
+      try {
+        const formData = JSON.parse(savedProductForm);
+        setNewProduct(formData);
+      } catch (error) {
+        console.error("Error parsing unsaved product form data:", error);
+        localStorage.removeItem("unsavedProductForm");
+      }
+    }
+  }, []);
+
+  // Guardar el estado del formulario del producto en localStorage cuando cambie
+  useEffect(() => {
+    // Solo guardar si hay datos y el modal está abierto
+    if (isProductDialogOpen && (newProduct.name || newProduct.price)) {
+      localStorage.setItem("unsavedProductForm", JSON.stringify(newProduct));
+    } else {
+      // Limpiar si el modal está cerrado o el formulario está vacío
+      localStorage.removeItem("unsavedProductForm");
+    }
+  }, [newProduct, isProductDialogOpen]);
+
   const resetProductForm = () => {
     setNewProduct({
       name: "",
@@ -602,6 +627,8 @@ export default function AdminDashboard() {
     });
     setEditingProduct(null);
     setIsProductDialogOpen(false);
+    // Limpiar localStorage al resetear el formulario
+    localStorage.removeItem("unsavedProductForm");
   };
 
   const resetDiscountForm = () => {
