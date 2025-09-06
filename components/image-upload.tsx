@@ -41,14 +41,13 @@ export function ImageUpload({
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  const dropzoneRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setMediaFiles(initialMedia);
   }, [initialMedia]);
 
-  const handleFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = Array.from(event.target.files || []);
+  const handleFilesUpload = async (files: File[]) => {
     if (!files.length) return;
 
     if (mediaFiles.length + files.length > maxImages) {
@@ -122,6 +121,51 @@ export function ImageUpload({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    handleFilesUpload(files);
+  };
+
+  const handlePaste = (event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          imageFiles.push(file);
+        }
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      event.preventDefault();
+      toast({
+        title: "Imagen pegada",
+        description: `Se ${
+          imageFiles.length > 1 ? "han" : "ha"
+        } detectado ${
+          imageFiles.length
+        } imagen(es) en el portapapeles. Subiendo...`,
+      });
+      handleFilesUpload(imageFiles);
+    }
+  };
+
+  useEffect(() => {
+    const dropzone = dropzoneRef.current;
+    if (dropzone) {
+      dropzone.addEventListener("paste", handlePaste as EventListener);
+    }
+    return () => {
+      if (dropzone) {
+        dropzone.removeEventListener("paste", handlePaste as EventListener);
+      }
+    };
+  }, [handleFilesUpload]);
+
   const removeFile = (fileIdToRemove: string) => {
     const updatedMedia = mediaFiles.filter((f) => f.id !== fileIdToRemove);
     setMediaFiles(updatedMedia);
@@ -137,7 +181,7 @@ export function ImageUpload({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" ref={dropzoneRef}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium">
@@ -216,7 +260,9 @@ export function ImageUpload({
       ) : (
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
           <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No hay archivos seleccionados</p>
+          <p className="text-gray-600">
+            Arrastra archivos aquí, pega una imagen o haz clic para seleccionar
+          </p>
         </div>
       )}
     </div>
