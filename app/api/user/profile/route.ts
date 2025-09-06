@@ -14,7 +14,10 @@ export async function PUT(request: Request) {
 
     let decodedToken: any;
     try {
-      decodedToken = jwt.verify(token, process.env.JWT_SECRET!);
+      decodedToken = jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET!
+      );
     } catch (error) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }

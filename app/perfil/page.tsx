@@ -35,6 +35,7 @@ import {
   MapPin,
   Phone,
   AtSign,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -208,16 +209,44 @@ export default function PerfilPage() {
                   {/* Información Personal */}
                   <div className="lg:col-span-2 space-y-6">
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <User className="w-5 h-5 mr-2" />
-                          Información Personal
-                        </CardTitle>
-                        <CardDescription>
-                          Actualiza tu información de perfil
-                        </CardDescription>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center">
+                            <User className="w-5 h-5 mr-2" />
+                            Información Personal
+                          </CardTitle>
+                          <CardDescription>
+                            Actualiza tu información de perfil
+                          </CardDescription>
+                        </div>
+                        <div>
+                          {isEditing ? (
+                            <div className="flex space-x-2">
+                              <Button
+                                onClick={handleSaveProfile}
+                                className="bg-rose-600 hover:bg-rose-700"
+                              >
+                                Guardar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => setIsEditing(false)}
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={() => setIsEditing(true)}
+                              variant="outline"
+                            >
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Editar Perfil
+                            </Button>
+                          )}
+                        </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-4 pt-6">
                         <div className="space-y-2">
                           <Label htmlFor="username">Nombre de Usuario *</Label>
                           <div className="relative">
@@ -313,32 +342,6 @@ export default function PerfilPage() {
                                 : "Usuario"}
                             </span>
                           </div>
-                        </div>
-
-                        <div className="flex space-x-2">
-                          {isEditing ? (
-                            <>
-                              <Button
-                                onClick={handleSaveProfile}
-                                className="bg-rose-600 hover:bg-rose-700"
-                              >
-                                Guardar Cambios
-                              </Button>
-                              <Button
-                                variant="outline"
-                                onClick={() => setIsEditing(false)}
-                              >
-                                Cancelar
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              onClick={() => setIsEditing(true)}
-                              variant="outline"
-                            >
-                              Editar Perfil
-                            </Button>
-                          )}
                         </div>
                       </CardContent>
                     </Card>

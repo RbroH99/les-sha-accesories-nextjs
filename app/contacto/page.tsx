@@ -1,43 +1,55 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { Mail, Phone, MapPin, Clock, Send, MessageCircle } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Mail, Phone, MapPin, Clock, Send, MessageCircle } from "lucide-react";
 
 export default function ContactoPage() {
-  const { toast } = useToast()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     subject: "",
     message: "",
-  })
+  });
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
     // Simular envío del formulario
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     toast({
       title: "Mensaje enviado",
       description: "Gracias por contactarnos. Te responderemos pronto.",
-    })
+    });
 
     // Reset form
     setFormData({
@@ -46,19 +58,21 @@ export default function ContactoPage() {
       phone: "",
       subject: "",
       message: "",
-    })
-    setIsSubmitting(false)
-  }
+    });
+    setIsSubmitting(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 font-playfair">Contáctanos</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 font-playfair">
+            Contáctanos
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            ¿Tienes alguna pregunta o quieres crear una pieza personalizada? Nos encantaría escucharte y ayudarte a
-            encontrar la joya perfecta.
+            ¿Tienes alguna pregunta o quieres crear una pieza personalizada? Nos
+            encantaría escucharte y ayudarte a encontrar la joya perfecta.
           </p>
         </div>
 
@@ -66,7 +80,9 @@ export default function ContactoPage() {
           {/* Información de Contacto */}
           <div className="space-y-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Información de Contacto</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Información de Contacto
+              </h2>
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -74,8 +90,12 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">info@bisuteria.com</p>
-                    <p className="text-sm text-gray-500">Te responderemos en 24 horas</p>
+                    <p className="text-gray-600">
+                      les.sha.accesorios@gmail.com
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Te responderemos en 24 horas
+                    </p>
                   </div>
                 </div>
 
@@ -85,8 +105,10 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Teléfono</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
-                    <p className="text-sm text-gray-500">Lun - Vie: 9:00 AM - 6:00 PM</p>
+                    <p className="text-gray-600">+53 56709472</p>
+                    <p className="text-sm text-gray-500">
+                      Lun - Vie: 9:00 AM - 6:00 PM
+                    </p>
                   </div>
                 </div>
 
@@ -96,8 +118,10 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Ubicación</h3>
-                    <p className="text-gray-600">Ciudad de México, México</p>
-                    <p className="text-sm text-gray-500">Envíos a todo el país</p>
+                    <p className="text-gray-600">La Habana, Cuba</p>
+                    <p className="text-sm text-gray-500">
+                      Para recogidas locales
+                    </p>
                   </div>
                 </div>
 
@@ -106,8 +130,12 @@ export default function ContactoPage() {
                     <Clock className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Horarios de Atención</h3>
-                    <p className="text-gray-600">Lunes - Viernes: 9:00 AM - 6:00 PM</p>
+                    <h3 className="font-semibold text-gray-900">
+                      Horarios de Atención
+                    </h3>
+                    <p className="text-gray-600">
+                      Lunes - Viernes: 9:00 AM - 6:00 PM
+                    </p>
                     <p className="text-gray-600">Sábados: 10:00 AM - 4:00 PM</p>
                     <p className="text-sm text-gray-500">Domingos cerrado</p>
                   </div>
@@ -125,21 +153,30 @@ export default function ContactoPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">¿Hacen piezas personalizadas?</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    ¿Hacen piezas personalizadas?
+                  </h4>
                   <p className="text-sm text-gray-600">
-                    ¡Por supuesto! Nos especializamos en crear piezas únicas según tus gustos y preferencias.
+                    ¡Por supuesto! Nos especializamos en crear piezas únicas
+                    según tus gustos y preferencias.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">¿Cuánto tiempo toma una pieza personalizada?</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    ¿Cuánto tiempo toma una pieza personalizada?
+                  </h4>
                   <p className="text-sm text-gray-600">
-                    Generalmente entre 1-2 semanas, dependiendo de la complejidad del diseño.
+                    Generalmente entre 1-2 semanas, dependiendo de la
+                    complejidad del diseño.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">¿Ofrecen garantía?</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    ¿Ofrecen garantía?
+                  </h4>
                   <p className="text-sm text-gray-600">
-                    Sí, todas nuestras piezas tienen garantía de 6 meses contra defectos de fabricación.
+                    Sí, todas nuestras piezas tienen garantía de 7 días contra
+                    defectos de fabricación.
                   </p>
                 </div>
               </CardContent>
@@ -150,7 +187,10 @@ export default function ContactoPage() {
           <Card>
             <CardHeader>
               <CardTitle>Envíanos un Mensaje</CardTitle>
-              <CardDescription>Completa el formulario y nos pondremos en contacto contigo pronto</CardDescription>
+              <CardDescription>
+                Completa el formulario y nos pondremos en contacto contigo
+                pronto
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -160,7 +200,9 @@ export default function ContactoPage() {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -170,7 +212,9 @@ export default function ContactoPage() {
                       id="phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -188,14 +232,25 @@ export default function ContactoPage() {
 
                 <div>
                   <Label htmlFor="subject">Asunto *</Label>
-                  <Select value={formData.subject} onValueChange={(value) => handleInputChange("subject", value)}>
+                  <Select
+                    value={formData.subject}
+                    onValueChange={(value) =>
+                      handleInputChange("subject", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona un asunto" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="consulta-general">Consulta General</SelectItem>
-                      <SelectItem value="pieza-personalizada">Pieza Personalizada</SelectItem>
-                      <SelectItem value="pedido-existente">Consulta sobre Pedido</SelectItem>
+                      <SelectItem value="consulta-general">
+                        Consulta General
+                      </SelectItem>
+                      <SelectItem value="pieza-personalizada">
+                        Pieza Personalizada
+                      </SelectItem>
+                      <SelectItem value="pedido-existente">
+                        Consulta sobre Pedido
+                      </SelectItem>
                       <SelectItem value="reparacion">Reparación</SelectItem>
                       <SelectItem value="colaboracion">Colaboración</SelectItem>
                       <SelectItem value="otro">Otro</SelectItem>
@@ -210,7 +265,9 @@ export default function ContactoPage() {
                     rows={5}
                     placeholder="Cuéntanos en qué podemos ayudarte..."
                     value={formData.message}
-                    onChange={(e) => handleInputChange("message", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("message", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -232,7 +289,8 @@ export default function ContactoPage() {
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Al enviar este formulario, aceptas que nos pongamos en contacto contigo para responder tu consulta.
+                  Al enviar este formulario, aceptas que nos pongamos en
+                  contacto contigo para responder tu consulta.
                 </p>
               </form>
             </CardContent>
@@ -240,5 +298,5 @@ export default function ContactoPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

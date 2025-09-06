@@ -12,7 +12,6 @@ import { useEffect, useState } from "react";
 import { ProductWithRelations } from "@/lib/repositories/products";
 import { StarRating } from "@/components/ui/star-rating";
 
-
 export default function HomePage() {
   const { toggleFavorite, isFavorite } = useFavorites();
   const { user } = useAuth();
@@ -57,12 +56,16 @@ export default function HomePage() {
                   <span className="text-rose-600 block">Artesanal</span>
                 </h1>
                 <p className="text-lg text-gray-600 max-w-md">
-                  Descubre piezas únicas creadas especialmente para ti. Cada joya cuenta una historia y refleja tu
-                  personalidad única.
+                  Descubre piezas únicas creadas especialmente para ti. Cada
+                  joya cuenta una historia y refleja tu personalidad única.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild size="lg" className="bg-rose-600 hover:bg-rose-700">
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-rose-600 hover:bg-rose-700"
+                >
                   <Link href="/tienda">
                     <ShoppingBag className="w-4 h-4 mr-2" />
                     Explorar Tienda
@@ -76,7 +79,7 @@ export default function HomePage() {
             <div className="relative">
               <div className="relative z-10">
                 <Image
-                  src="/placeholder.svg?height=500&width=500"
+                  src="/landing_img.JPG?height=500&width=500"
                   alt="Bisutería artesanal"
                   width={500}
                   height={500}
@@ -94,10 +97,13 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Productos Destacados</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Productos Destacados
+            </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Descubre nuestras piezas más populares, cada una creada con técnicas artesanales tradicionales y
-              materiales de la más alta calidad.
+              Descubre nuestras piezas más populares, cada una creada con
+              técnicas artesanales tradicionales y materiales de la más alta
+              calidad.
             </p>
           </div>
 
@@ -224,14 +230,18 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Creado con Pasión y Dedicación</h2>
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
+                Creado con Pasión y Dedicación
+              </h2>
               <p className="text-gray-600 leading-relaxed">
-                Cada pieza de nuestra colección es única y está hecha a mano con amor. Utilizamos materiales naturales y
-                técnicas tradicionales para crear joyas que no solo son hermosas, sino que también cuentan una historia.
+                Cada pieza está hecha a mano con amor. Utilizamos materiales y
+                técnicas tradicionales para crear joyas que no solo son
+                hermosas, sino que también cuentan una historia.
               </p>
               <p className="text-gray-600 leading-relaxed">
-                Desde collares elegantes hasta aretes delicados, cada creación refleja nuestra pasión por el arte y
-                nuestro compromiso con la calidad artesanal.
+                Desde collares elegantes hasta aretes delicados, cada creación
+                refleja nuestra pasión por el arte y nuestro compromiso con la
+                calidad artesanal.
               </p>
               <Button asChild className="bg-amber-600 hover:bg-amber-700">
                 <Link href="/sobre-mi">Conoce Más Sobre Mí</Link>
@@ -253,21 +263,26 @@ export default function HomePage() {
       {/* Contacto */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">¿Tienes alguna pregunta?</h2>
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+            ¿Tienes alguna pregunta?
+          </h2>
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Estamos aquí para ayudarte. Contáctanos para consultas sobre productos personalizados, tiempos de entrega o
-            cualquier otra pregunta.
+            Estamos aquí para ayudarte. Contáctanos para consultas sobre
+            productos personalizados, tiempos de entrega o cualquier otra
+            pregunta.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-rose-600 hover:bg-rose-700">
               <Link href="/contacto">Contáctanos</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="mailto:info@bisuteria.com">info@bisuteria.com</Link>
+              <Link href="mailto:les.sha.accesorios@gmail.com">
+                les.sha.accesorios@gmail.com
+              </Link>
             </Button>
           </div>
         </div>
       </section>
     </div>
-  )
+  );
 }
