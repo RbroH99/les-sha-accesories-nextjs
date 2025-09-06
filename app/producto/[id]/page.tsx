@@ -281,6 +281,28 @@ export default function ProductDetailPage() {
     }
   };
 
+  const getWarrantyText = (
+    hasWarranty: boolean,
+    duration?: number | null,
+    unit?: string | null
+  ) => {
+    if (!hasWarranty || !duration || !unit) {
+      return null;
+    }
+
+    const unitTranslations: { [key: string]: { singular: string; plural: string } } = {
+      days: { singular: "día", plural: "días" },
+      months: { singular: "mes", plural: "meses" },
+      years: { singular: "año", plural: "años" },
+    };
+
+    const translation = unitTranslations[unit];
+    if (!translation) return null;
+
+    const unitText = duration === 1 ? translation.singular : translation.plural;
+    return `Garantía de ${duration} ${unitText}`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -303,6 +325,11 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+  const warrantyText = getWarrantyText(
+    product.hasWarranty,
+    product.warrantyDuration,
+    product.warrantyUnit
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -547,10 +574,12 @@ export default function ProductDetailPage() {
                   </span>
                 </div>
               )}
-              <div className="flex items-center space-x-3">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <span className="text-sm">Garantía de 6 meses</span>
-              </div>
+              {warrantyText && (
+                <div className="flex items-center space-x-3">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm">{warrantyText}</span>
+                </div>
+              )}
             </div>
 
             {/* Mensaje de envíos deshabilitados */}
