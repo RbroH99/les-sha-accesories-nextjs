@@ -68,7 +68,7 @@ export const warrantyUnitEnum = pgEnum("warranty_unit", [
 export const products = pgTable("products", {
   id: varchar("id", { length: 50 }).primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: text("description").notNull(),
+  description: text("description"),
   story: text("story"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   categoryId: varchar("category_id", { length: 50 }).notNull(),
@@ -89,7 +89,9 @@ export const products = pgTable("products", {
   warrantyDuration: integer("warranty_duration"),
   warrantyUnit: warrantyUnitEnum("warranty_unit"),
   discountId: varchar("discount_id", { length: 50 }),
-  averageRating: numeric("average_rating", { precision: 3, scale: 2 }).default("0").notNull(),
+  averageRating: numeric("average_rating", { precision: 3, scale: 2 })
+    .default("0")
+    .notNull(),
   ratingCount: integer("rating_count").default(0).notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
@@ -179,7 +181,10 @@ export const orderItems = pgTable("order_items", {
   name: varchar("name", { length: 255 }).notNull(),
   quantity: integer("quantity").notNull(),
   image: varchar("image", { length: 500 }),
-  originalPrice: numeric("original_price", { precision: 10, scale: 2 }).notNull(),
+  originalPrice: numeric("original_price", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
   finalPrice: numeric("final_price", { precision: 10, scale: 2 }).notNull(),
   discountType: discountTypeEnum("discount_type"),
   discountValue: numeric("discount_value", { precision: 10, scale: 2 }),

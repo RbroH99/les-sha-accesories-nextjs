@@ -1877,7 +1877,7 @@ export default function AdminDashboard() {
 
                             <div>
                               <Label htmlFor="description" className="text-sm">
-                                Descripción *
+                                Descripción
                               </Label>
                               <Textarea
                                 id="description"
@@ -1888,7 +1888,6 @@ export default function AdminDashboard() {
                                     description: e.target.value,
                                   })
                                 }
-                                required
                                 rows={3}
                                 className="text-sm"
                               />
