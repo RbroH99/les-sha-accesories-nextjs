@@ -585,7 +585,11 @@ export default function AdminDashboard() {
     if (savedProductForm) {
       try {
         const formData = JSON.parse(savedProductForm);
-        setNewProduct(formData);
+        // Si hay datos guardados (ej. un nombre), restaurar y reabrir el modal
+        if (formData && (formData.name || formData.price || formData.images?.length > 0)) {
+          setNewProduct(formData);
+          setIsProductDialogOpen(true);
+        }
       } catch (error) {
         console.error("Error parsing unsaved product form data:", error);
         localStorage.removeItem("unsavedProductForm");
@@ -596,7 +600,7 @@ export default function AdminDashboard() {
   // Guardar el estado del formulario del producto en localStorage cuando cambie
   useEffect(() => {
     // Solo guardar si hay datos y el modal está abierto
-    if (isProductDialogOpen && (newProduct.name || newProduct.price)) {
+    if (isProductDialogOpen && (newProduct.name || newProduct.price || newProduct.images?.length > 0)) {
       localStorage.setItem("unsavedProductForm", JSON.stringify(newProduct));
     } else {
       // Limpiar si el modal está cerrado o el formulario está vacío
