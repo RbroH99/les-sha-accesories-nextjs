@@ -173,7 +173,7 @@ export default function PerfilPage() {
   }
 
   const totalCartValue = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.finalPrice || item.originalPrice || item.price || 0) * item.quantity,
     0
   );
 
@@ -798,13 +798,26 @@ export default function PerfilPage() {
                             Cantidad: {item.quantity}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Precio unitario: ${item.price.toFixed(2)}
+                            Precio unitario: ${(item.finalPrice || item.originalPrice || 0).toFixed(2)}
                           </p>
+                          {item.discountValue && (
+                            <p className="text-xs text-gray-500 line-through">
+                              Precio original: ${(item.originalPrice || 0).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ${((item.finalPrice || item.originalPrice || 0) * item.quantity).toFixed(2)}
                           </p>
+                          {item.discountValue && (
+                            <p className="text-xs text-green-600 font-medium">
+                              {item.discountType === 'percentage' 
+                                ? `${item.discountValue}% OFF`
+                                : `$${item.discountValue} OFF`
+                              }
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
