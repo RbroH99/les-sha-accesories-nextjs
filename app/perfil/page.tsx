@@ -36,7 +36,18 @@ import {
   Phone,
   AtSign,
   Pencil,
+  Clock,
+  CheckCircle,
+  Truck,
+  CreditCard,
+  Calendar,
+  Copy,
+  Sparkles,
+  Star,
+  Shield,
+  Hash,
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -649,220 +660,353 @@ export default function PerfilPage() {
         </div>
       </div>
 
-      {/* Modal de Detalles del Pedido */}
+      {/* Modal de Detalles del Pedido Mejorado */}
       <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Detalles del Pedido #{selectedOrder?.id.slice(-8)}
-            </DialogTitle>
-            <DialogDescription>
-              Información completa del pedido realizado el{" "}
-              {selectedOrder &&
-                new Date(selectedOrder.createdAt).toLocaleDateString("es-ES", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-white to-gray-50/80 backdrop-blur-sm border-0 shadow-2xl">
           {selectedOrder && (
-            <div className="space-y-6">
-              {/* Estado del Pedido */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-semibold text-lg">Estado del Pedido</h3>
-                  <Badge className={getStatusColor(selectedOrder.status)}>
-                    {getStatusText(selectedOrder.status)}
-                  </Badge>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Total del Pedido</p>
-                  <p className="text-2xl font-bold text-rose-600">
-                    ${selectedOrder.totalAmount.toFixed(2)}
-                  </p>
-                </div>
+            <>
+              {/* Header con gradiente y elementos decorativos */}
+              <div className="relative overflow-hidden -mx-6 -mt-6 px-6 pt-6 pb-8 bg-gradient-to-r from-rose-500/5 via-pink-500/5 to-purple-500/5 border-b border-gray-100">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-400/10 to-pink-600/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/10 to-rose-600/10 rounded-full transform -translate-x-12 translate-y-12"></div>
+                
+                <DialogHeader className="relative">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <ShoppingBag className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                          Pedido #{selectedOrder.id.slice(-8).toUpperCase()}
+                        </DialogTitle>
+                        <div className="flex items-center space-x-3 mt-1">
+                          <Badge className={`${getStatusColor(selectedOrder.status)} shadow-sm`}>
+                            {getStatusText(selectedOrder.status)}
+                          </Badge>
+                          <span className="flex items-center text-sm text-gray-500">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            {new Date(selectedOrder.createdAt).toLocaleDateString("es-ES", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500 mb-1">Total del Pedido</p>
+                      <p className="text-3xl font-bold text-rose-600 shadow-sm">
+                        ${selectedOrder.totalAmount.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </DialogHeader>
               </div>
 
-              {/* Información de Envío - Solo mostrar si hay dirección */}
-              {selectedOrder.shippingAddress &&
-                selectedOrder.shippingAddress.address && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <MapPin className="w-5 h-5 mr-2" />
-                        Dirección de Envío
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <p className="font-medium">
-                          {selectedOrder.customerName}
-                        </p>
-                        <p>{selectedOrder.shippingAddress.address}</p>
-                        <p>
-                          {selectedOrder.shippingAddress.city},{" "}
-                          {selectedOrder.shippingAddress.state}{" "}
-                          {selectedOrder.shippingAddress.zipCode}
-                        </p>
-                        <p>{selectedOrder.shippingAddress.country}</p>
-                        {selectedOrder.customerPhone && (
-                          <p className="flex items-center">
-                            <Phone className="w-4 h-4 mr-2" />
-                            {selectedOrder.customerPhone}
-                          </p>
-                        )}
-                        {selectedOrder.customerEmail && (
-                          <p className="flex items-center">
-                            <Mail className="w-4 h-4 mr-2" />
-                            {selectedOrder.customerEmail}
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-              {/* Información de contacto para pedidos sin envío */}
-              {(!selectedOrder.shippingAddress ||
-                !selectedOrder.shippingAddress.address) && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <User className="w-5 h-5 mr-2" />
-                      Información de Contacto
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="font-medium">
-                        {selectedOrder.customerName}
-                      </p>
-                      {selectedOrder.customerEmail && (
-                        <p className="flex items-center">
-                          <Mail className="w-4 h-4 mr-2" />
-                          {selectedOrder.customerEmail}
-                        </p>
-                      )}
-                      {selectedOrder.customerPhone && (
-                        <p className="flex items-center">
-                          <Phone className="w-4 h-4 mr-2" />
-                          {selectedOrder.customerPhone}
-                        </p>
-                      )}
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-800 font-medium">
-                          Pedido sin envío
-                        </p>
-                        <p className="text-xs text-blue-600">
-                          Este pedido será entregado en persona o retirado en
-                          tienda
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Productos del Pedido */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Productos Ordenados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {selectedOrder.items.map((item: any, index: number) => (
-                      <div
-                        key={index}
-                        className="flex items-center space-x-4 p-4 border rounded-lg"
-                      >
-                        <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                          {item.image ? (
-                            <Image
-                              src={item.image || "/placeholder.svg"}
-                              alt={item.name}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package className="w-8 h-8 text-gray-400" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold">{item.name}</h4>
-                          <p className="text-sm text-gray-600">
-                            Cantidad: {item.quantity}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Precio unitario: ${(item.finalPrice || item.originalPrice || 0).toFixed(2)}
-                          </p>
-                          {item.discountValue && (
-                            <p className="text-xs text-gray-500 line-through">
-                              Precio original: ${(item.originalPrice || 0).toFixed(2)}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">
-                            ${((item.finalPrice || item.originalPrice || 0) * item.quantity).toFixed(2)}
-                          </p>
-                          {item.discountValue && (
-                            <p className="text-xs text-green-600 font-medium">
-                              {item.discountType === 'percentage' 
-                                ? `${item.discountValue}% OFF`
-                                : `$${item.discountValue} OFF`
-                              }
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Resumen de Costos */}
-                  <div className="mt-6 pt-4 border-t space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>
-                        $
-                        {(
-                          selectedOrder.totalAmount -
-                          (selectedOrder.shippingCost || 0)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                    {selectedOrder.shippingCost > 0 && (
-                      <div className="flex justify-between">
-                        <span>Envío:</span>
-                        <span>${selectedOrder.shippingCost.toFixed(2)}</span>
-                      </div>
+              {/* Contenido con scroll */}
+              <div className="overflow-y-auto max-h-[60vh] -mx-6 px-6">
+                <div className="grid lg:grid-cols-3 gap-6 py-6">
+                  {/* Columna principal */}
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* Información de contacto/envío */}
+                    {selectedOrder.shippingAddress && selectedOrder.shippingAddress.address ? (
+                      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="flex items-center text-lg">
+                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                              <Truck className="w-4 h-4 text-blue-600" />
+                            </div>
+                            Dirección de Envío
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3 text-gray-700">
+                            <div className="flex items-center">
+                              <User className="w-4 h-4 mr-2 text-gray-400" />
+                              <span className="font-medium">{selectedOrder.customerName}</span>
+                            </div>
+                            <div className="flex items-start">
+                              <MapPin className="w-4 h-4 mr-2 text-gray-400 mt-0.5" />
+                              <div>
+                                <p>{selectedOrder.shippingAddress.address}</p>
+                                <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}</p>
+                                <p>{selectedOrder.shippingAddress.country}</p>
+                              </div>
+                            </div>
+                            {selectedOrder.customerPhone && (
+                              <div className="flex items-center">
+                                <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                                <span>{selectedOrder.customerPhone}</span>
+                              </div>
+                            )}
+                            {selectedOrder.customerEmail && (
+                              <div className="flex items-center">
+                                <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                                <span>{selectedOrder.customerEmail}</span>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="flex items-center text-lg">
+                            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mr-3">
+                              <User className="w-4 h-4 text-amber-600" />
+                            </div>
+                            Información de Contacto
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex items-center">
+                              <User className="w-4 h-4 mr-2 text-gray-400" />
+                              <span className="font-medium">{selectedOrder.customerName}</span>
+                            </div>
+                            {selectedOrder.customerEmail && (
+                              <div className="flex items-center">
+                                <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                                <span>{selectedOrder.customerEmail}</span>
+                              </div>
+                            )}
+                            {selectedOrder.customerPhone && (
+                              <div className="flex items-center">
+                                <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                                <span>{selectedOrder.customerPhone}</span>
+                              </div>
+                            )}
+                            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                              <div className="flex items-center">
+                                <Shield className="w-5 h-5 text-blue-600 mr-2" />
+                                <p className="font-medium text-blue-900">Pedido sin envío</p>
+                              </div>
+                              <p className="text-sm text-blue-700 mt-1 ml-7">
+                                Este pedido será entregado en persona o retirado en tienda
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     )}
-                    <div className="flex justify-between font-bold text-lg border-t pt-2">
-                      <span>Total:</span>
-                      <span className="text-rose-600">
-                        ${selectedOrder.totalAmount.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Información Adicional */}
-              {selectedOrder.notes && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notas del Pedido</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-700">{selectedOrder.notes}</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    {/* Productos del Pedido */}
+                    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center text-lg">
+                          <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center mr-3">
+                            <Package className="w-4 h-4 text-rose-600" />
+                          </div>
+                          Productos Ordenados ({selectedOrder.items.length} {selectedOrder.items.length === 1 ? 'artículo' : 'artículos'})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {selectedOrder.items.map((item: any, index: number) => (
+                            <div
+                              key={index}
+                              className="flex items-center space-x-4 p-4 bg-gradient-to-r from-gray-50 to-gray-50/50 rounded-xl border border-gray-100 hover:shadow-md transition-shadow"
+                            >
+                              <div className="w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image || "/placeholder.svg"}
+                                    alt={item.name}
+                                    width={72}
+                                    height={72}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Package className="w-8 h-8 text-gray-400" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                                <div className="flex items-center space-x-4 mt-2">
+                                  <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-sm">
+                                    <Hash className="w-3 h-3 mr-1" />
+                                    {item.quantity}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    ${(item.finalPrice || item.originalPrice || 0).toFixed(2)} c/u
+                                  </span>
+                                </div>
+                                {item.discountValue && (
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <span className="text-xs text-gray-500 line-through">
+                                      ${(item.originalPrice || 0).toFixed(2)}
+                                    </span>
+                                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 hover:bg-green-200">
+                                      <Star className="w-3 h-3 mr-1" />
+                                      {item.discountType === 'percentage' 
+                                        ? `${item.discountValue}% OFF`
+                                        : `$${item.discountValue} OFF`
+                                      }
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-lg text-rose-600">
+                                  ${((item.finalPrice || item.originalPrice || 0) * item.quantity).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Notas del Pedido */}
+                    {selectedOrder.notes && (
+                      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="flex items-center text-lg">
+                            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                              <Sparkles className="w-4 h-4 text-purple-600" />
+                            </div>
+                            Notas del Pedido
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                            <p className="text-gray-700 italic">"{selectedOrder.notes}"</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+
+                  {/* Sidebar con resumen */}
+                  <div className="space-y-6">
+                    {/* Resumen del Pedido */}
+                    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm sticky top-4">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center text-lg">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <CreditCard className="w-4 h-4 text-green-600" />
+                          </div>
+                          Resumen de Pago
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-gray-600">
+                            <span>Subtotal:</span>
+                            <span>${(selectedOrder.totalAmount - (selectedOrder.shippingCost || 0)).toFixed(2)}</span>
+                          </div>
+                          {selectedOrder.shippingCost > 0 && (
+                            <div className="flex justify-between text-gray-600">
+                              <span>Envío:</span>
+                              <span>${selectedOrder.shippingCost.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="flex justify-between items-center text-xl font-bold">
+                          <span>Total:</span>
+                          <span className="text-rose-600 text-2xl">
+                            ${selectedOrder.totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                        
+                        <div className="pt-4 border-t">
+                          <div className="flex items-center justify-center text-sm text-gray-500">
+                            <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                            Pago confirmado
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Timeline del pedido */}
+                    <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center text-lg">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <Clock className="w-4 h-4 text-blue-600" />
+                          </div>
+                          Estado del Pedido
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                              ✓
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">Pedido recibido</p>
+                              <p className="text-xs text-gray-500">Confirmado y procesado</p>
+                            </div>
+                          </div>
+                          
+                          <div className={`flex items-center ${
+                            ['aceptado', 'en_proceso', 'enviado', 'entregado'].includes(selectedOrder.status) 
+                              ? 'text-gray-900' : 'text-gray-400'
+                          }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
+                              ['aceptado', 'en_proceso', 'enviado', 'entregado'].includes(selectedOrder.status)
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-200 text-gray-500'
+                            }`}>
+                              {['aceptado', 'en_proceso', 'enviado', 'entregado'].includes(selectedOrder.status) ? '✓' : '2'}
+                            </div>
+                            <div>
+                              <p className="font-medium">En preparación</p>
+                              <p className="text-xs text-gray-500">Productos siendo preparados</p>
+                            </div>
+                          </div>
+                          
+                          <div className={`flex items-center ${
+                            ['enviado', 'entregado'].includes(selectedOrder.status) 
+                              ? 'text-gray-900' : 'text-gray-400'
+                          }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
+                              ['enviado', 'entregado'].includes(selectedOrder.status)
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-200 text-gray-500'
+                            }`}>
+                              {['enviado', 'entregado'].includes(selectedOrder.status) ? '✓' : '3'}
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {selectedOrder.shippingAddress ? 'Enviado' : 'Listo para recoger'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {selectedOrder.shippingAddress ? 'En camino a tu dirección' : 'Disponible en tienda'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className={`flex items-center ${
+                            selectedOrder.status === 'entregado' ? 'text-gray-900' : 'text-gray-400'
+                          }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3 ${
+                              selectedOrder.status === 'entregado'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-200 text-gray-500'
+                            }`}>
+                              {selectedOrder.status === 'entregado' ? '✓' : '4'}
+                            </div>
+                            <div>
+                              <p className="font-medium">Entregado</p>
+                              <p className="text-xs text-gray-500">Pedido completado</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
