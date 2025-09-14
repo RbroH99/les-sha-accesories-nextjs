@@ -52,19 +52,16 @@ export class SettingsRepository {
   async updateMultipleSettings(settingsToUpdate: Setting[]): Promise<boolean> {
     try {
       const now = new Date();
-      // Drizzle doesn't have a bulk update with different values per row,
-      // so we have to do it in a transaction.
-      await db.transaction(async (tx) => {
-        for (const setting of settingsToUpdate) {
-          await tx
-            .insert(settings)
-            .values({ key: setting.key, value: setting.value, updatedAt: now })
-            .onConflictDoUpdate({
-              target: settings.key,
-              set: { value: setting.value, updatedAt: now },
-            });
-        }
-      });
+      // Process each setting individually since neon-http doesn't support transactions
+      for (const setting of settingsToUpdate) {
+        await db
+          .insert(settings)
+          .values({ key: setting.key, value: setting.value, updatedAt: now })
+          .onConflictDoUpdate({
+            target: settings.key,
+            set: { value: setting.value, updatedAt: now },
+          });
+      }
       return true;
     } catch (error) {
       console.error("Error updating multiple settings:", error);

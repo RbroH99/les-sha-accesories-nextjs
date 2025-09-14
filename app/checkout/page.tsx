@@ -24,7 +24,7 @@ export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
   const { user } = useAuth()
   const { createOrder } = useOrders()
-  const { settings } = useSettings()
+  const { settings, loading: settingsLoading } = useSettings()
   const router = useRouter()
   const { toast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -40,7 +40,7 @@ export default function CheckoutPage() {
     city: user?.defaultAddress?.city || "",
     state: user?.defaultAddress?.state || "",
     zipCode: user?.defaultAddress?.zipCode || "",
-    country: user?.defaultAddress?.country || "México",
+    country: user?.defaultAddress?.country || "Cuba",
 
     // Información de pago
     cardNumber: "",
@@ -120,6 +120,21 @@ export default function CheckoutPage() {
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando configuración...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (items.length === 0) {
@@ -303,9 +318,7 @@ export default function CheckoutPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="México">México</SelectItem>
-                            <SelectItem value="Estados Unidos">Estados Unidos</SelectItem>
-                            <SelectItem value="Canadá">Canadá</SelectItem>
+                            <SelectItem value="Cuba">Cuba</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

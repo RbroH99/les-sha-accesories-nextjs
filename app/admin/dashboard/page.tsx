@@ -41,6 +41,7 @@ import {
   Hash,
   Menu,
   Palette,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/image-upload";
@@ -72,6 +73,7 @@ import {
   useCategories,
 } from "@/contexts/categories-context";
 import { ProductDetail } from "@/lib/repositories/products";
+import { useSettings } from "@/contexts/settings-context";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -94,6 +96,15 @@ export default function AdminDashboard() {
     deleteDiscount,
     fetchDiscounts,
   } = useDiscounts();
+  // App settings from context
+  const { settings: appSettings, updateSettings: updateAppSettings, loading: loadingAppSettings } = useSettings();
+  
+  // Loading states for individual settings switches
+  const [loadingShipping, setLoadingShipping] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+  const [loadingTax, setLoadingTax] = useState(false);
+  
+  // General site settings (kept separate)
   const [settings, setSettings] = useState({
     siteName: "Lesha",
     maintenanceMode: false,
@@ -3643,7 +3654,36 @@ export default function AdminDashboard() {
                         Permitir envíos a domicilio
                       </p>
                     </div>
-                    <Switch id="shipping" />
+                    <div className="flex items-center space-x-2">
+                      {loadingShipping && (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      )}
+                      <Switch 
+                        id="shipping" 
+                        checked={appSettings.shippingEnabled}
+                        disabled={loadingShipping || loadingAppSettings}
+                        onCheckedChange={async (checked) => {
+                          setLoadingShipping(true);
+                          try {
+                            const success = await updateAppSettings({ shippingEnabled: checked });
+                            if (success) {
+                              toast({
+                                title: "Configuración actualizada",
+                                description: `Envíos ${checked ? 'habilitados' : 'deshabilitados'} exitosamente.`,
+                              });
+                            } else {
+                              toast({
+                                title: "Error",
+                                description: "No se pudo actualizar la configuración de envíos.",
+                                variant: "destructive",
+                              });
+                            }
+                          } finally {
+                            setLoadingShipping(false);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="shipping-message" className="text-sm">
@@ -3654,6 +3694,10 @@ export default function AdminDashboard() {
                       placeholder="Los envíos están temporalmente suspendidos..."
                       rows={2}
                       className="text-sm"
+                      value={appSettings.shippingMessage || ''}
+                      onChange={(e) => {
+                        updateAppSettings({ shippingMessage: e.target.value });
+                      }}
                     />
                   </div>
                 </div>
@@ -3672,7 +3716,36 @@ export default function AdminDashboard() {
                         Permitir pagos con tarjeta en línea
                       </p>
                     </div>
-                    <Switch id="payment" />
+                    <div className="flex items-center space-x-2">
+                      {loadingPayment && (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      )}
+                      <Switch 
+                        id="payment" 
+                        checked={appSettings.paymentEnabled}
+                        disabled={loadingPayment || loadingAppSettings}
+                        onCheckedChange={async (checked) => {
+                          setLoadingPayment(true);
+                          try {
+                            const success = await updateAppSettings({ paymentEnabled: checked });
+                            if (success) {
+                              toast({
+                                title: "Configuración actualizada",
+                                description: `Pagos en línea ${checked ? 'habilitados' : 'deshabilitados'} exitosamente.`,
+                              });
+                            } else {
+                              toast({
+                                title: "Error",
+                                description: "No se pudo actualizar la configuración de pagos.",
+                                variant: "destructive",
+                              });
+                            }
+                          } finally {
+                            setLoadingPayment(false);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="payment-message" className="text-sm">
@@ -3683,6 +3756,10 @@ export default function AdminDashboard() {
                       placeholder="Los pagos en línea están temporalmente deshabilitados..."
                       rows={2}
                       className="text-sm"
+                      value={appSettings.paymentMessage || ''}
+                      onChange={(e) => {
+                        updateAppSettings({ paymentMessage: e.target.value });
+                      }}
                     />
                   </div>
                 </div>
@@ -3703,7 +3780,36 @@ export default function AdminDashboard() {
                         Aplicar impuestos a las compras
                       </p>
                     </div>
-                    <Switch id="tax" />
+                    <div className="flex items-center space-x-2">
+                      {loadingTax && (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      )}
+                      <Switch 
+                        id="tax" 
+                        checked={appSettings.taxEnabled}
+                        disabled={loadingTax || loadingAppSettings}
+                        onCheckedChange={async (checked) => {
+                          setLoadingTax(true);
+                          try {
+                            const success = await updateAppSettings({ taxEnabled: checked });
+                            if (success) {
+                              toast({
+                                title: "Configuración actualizada",
+                                description: `Impuestos ${checked ? 'habilitados' : 'deshabilitados'} exitosamente.`,
+                              });
+                            } else {
+                              toast({
+                                title: "Error",
+                                description: "No se pudo actualizar la configuración de impuestos.",
+                                variant: "destructive",
+                              });
+                            }
+                          } finally {
+                            setLoadingTax(false);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
@@ -3714,6 +3820,10 @@ export default function AdminDashboard() {
                         id="tax-name"
                         placeholder="IVA"
                         className="text-sm"
+                        value={appSettings.taxName || ''}
+                        onChange={(e) => {
+                          updateAppSettings({ taxName: e.target.value });
+                        }}
                       />
                     </div>
                     <div>
@@ -3726,6 +3836,11 @@ export default function AdminDashboard() {
                         step="0.01"
                         placeholder="16"
                         className="text-sm"
+                        value={appSettings.taxRate || 0}
+                        onChange={(e) => {
+                          const rate = parseFloat(e.target.value) || 0;
+                          updateAppSettings({ taxRate: rate });
+                        }}
                       />
                     </div>
                   </div>
@@ -3749,10 +3864,12 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <Button className="w-full sm:w-auto">
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar Configuración
-                </Button>
+                {loadingAppSettings && (
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                    <span>Cargando configuración...</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

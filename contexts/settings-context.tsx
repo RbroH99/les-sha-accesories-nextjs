@@ -14,12 +14,12 @@ interface AppSettings {
 
 interface SettingsContextType {
   settings: AppSettings
-  updateSettings: (newSettings: Partial<AppSettings>) => void
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<boolean>
+  refreshSettings: () => Promise<void>
+  loading: boolean
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
-
-const SETTINGS_STORAGE_KEY = "bisuteria_settings"
 
 const defaultSettings: AppSettings = {
   shippingEnabled: true,
@@ -35,21 +35,79 @@ const defaultSettings: AppSettings = {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings)
+  const [loading, setLoading] = useState(true)
 
+  // Fetch settings from database on mount
   useEffect(() => {
-    const stored = localStorage.getItem(SETTINGS_STORAGE_KEY)
-    if (stored) {
-      setSettings(JSON.parse(stored))
-    }
+    fetchSettingsFromDB()
   }, [])
 
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    const updatedSettings = { ...settings, ...newSettings }
-    setSettings(updatedSettings)
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings))
+  const fetchSettingsFromDB = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/settings')
+      if (response.ok) {
+        const data = await response.json()
+        // Convert database format to our settings format
+        const mappedSettings = {
+          shippingEnabled: data.shippingEnabled === true || data.shippingEnabled === 'true',
+          shippingMessage: data.shippingMessage || defaultSettings.shippingMessage,
+          paymentEnabled: data.paymentEnabled === true || data.paymentEnabled === 'true',
+          paymentMessage: data.paymentMessage || defaultSettings.paymentMessage,
+          taxEnabled: data.taxEnabled === true || data.taxEnabled === 'true',
+          taxRate: Number(data.taxRate) || defaultSettings.taxRate,
+          taxName: data.taxName || defaultSettings.taxName,
+        }
+        setSettings(mappedSettings)
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+      // Keep default settings if fetch fails
+    } finally {
+      setLoading(false)
+    }
   }
 
-  return <SettingsContext.Provider value={{ settings, updateSettings }}>{children}</SettingsContext.Provider>
+  const updateSettings = async (newSettings: Partial<AppSettings>): Promise<boolean> => {
+    try {
+      // Prepare settings for database format
+      const settingsToSave = Object.entries(newSettings).map(([key, value]) => ({
+        key,
+        value,
+      }))
+
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settingsToSave),
+      })
+
+      if (response.ok) {
+        // Update local state only if database update succeeded
+        const updatedSettings = { ...settings, ...newSettings }
+        setSettings(updatedSettings)
+        return true
+      } else {
+        console.error('Failed to save settings to database')
+        return false
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error)
+      return false
+    }
+  }
+
+  const refreshSettings = async () => {
+    await fetchSettingsFromDB()
+  }
+
+  return (
+    <SettingsContext.Provider 
+      value={{ settings, updateSettings, refreshSettings, loading }}
+    >
+      {children}
+    </SettingsContext.Provider>
+  )
 }
 
 export function useSettings() {
