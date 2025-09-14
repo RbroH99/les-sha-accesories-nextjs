@@ -42,6 +42,17 @@ import {
   Menu,
   Palette,
   Loader2,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Truck,
+  CreditCard,
+  Calendar,
+  Sparkles,
+  Star,
+  Shield,
+  ShoppingBag,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/image-upload";
@@ -97,13 +108,17 @@ export default function AdminDashboard() {
     fetchDiscounts,
   } = useDiscounts();
   // App settings from context
-  const { settings: appSettings, updateSettings: updateAppSettings, loading: loadingAppSettings } = useSettings();
-  
+  const {
+    settings: appSettings,
+    updateSettings: updateAppSettings,
+    loading: loadingAppSettings,
+  } = useSettings();
+
   // Loading states for individual settings switches
   const [loadingShipping, setLoadingShipping] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [loadingTax, setLoadingTax] = useState(false);
-  
+
   // General site settings (kept separate)
   const [settings, setSettings] = useState({
     siteName: "Lesha",
@@ -303,6 +318,7 @@ export default function AdminDashboard() {
     null
   );
   const [viewingOrder, setViewingOrder] = useState<any | null>(null);
+  const [loadingOrderUpdate, setLoadingOrderUpdate] = useState(false);
   const [filteredProducts, setFilteredProducts] = useState<ProductDetail[]>([]);
 
   const itemsPerPageOptions = [5, 10, 20, 50];
@@ -597,7 +613,10 @@ export default function AdminDashboard() {
       try {
         const formData = JSON.parse(savedProductForm);
         // Si hay datos guardados (ej. un nombre), restaurar y reabrir el modal
-        if (formData && (formData.name || formData.price || formData.images?.length > 0)) {
+        if (
+          formData &&
+          (formData.name || formData.price || formData.images?.length > 0)
+        ) {
           setNewProduct(formData);
           setIsProductDialogOpen(true);
         }
@@ -611,7 +630,10 @@ export default function AdminDashboard() {
   // Guardar el estado del formulario del producto en localStorage cuando cambie
   useEffect(() => {
     // Solo guardar si hay datos y el modal está abierto
-    if (isProductDialogOpen && (newProduct.name || newProduct.price || newProduct.images?.length > 0)) {
+    if (
+      isProductDialogOpen &&
+      (newProduct.name || newProduct.price || newProduct.images?.length > 0)
+    ) {
       localStorage.setItem("unsavedProductForm", JSON.stringify(newProduct));
     } else {
       // Limpiar si el modal está cerrado o el formulario está vacío
@@ -727,7 +749,35 @@ export default function AdminDashboard() {
     orderId: string,
     newStatus: OrderStatus
   ) => {
-    await updateOrderStatus(orderId, newStatus);
+    setLoadingOrderUpdate(true);
+    try {
+      const success = await updateOrderStatus(orderId, newStatus);
+      if (success) {
+        // Actualizar el viewingOrder inmediatamente para reflejar el cambio en la UI
+        if (viewingOrder && viewingOrder.id === orderId) {
+          setViewingOrder({ ...viewingOrder, status: newStatus });
+        }
+        toast({
+          title: "Estado actualizado",
+          description: `El estado del pedido se cambió a "${newStatus}" exitosamente.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar el estado del pedido.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast({
+        title: "Error de red",
+        description: "Hubo un problema al actualizar el estado del pedido.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingOrderUpdate(false);
+    }
   };
 
   const [newlyUploaded, setNewlyUploaded] = useState<string[]>([]);
@@ -1319,111 +1369,576 @@ export default function AdminDashboard() {
                 open={!!viewingOrder}
                 onOpenChange={() => setViewingOrder(null)}
               >
-                <DialogContent className="max-w-3xl">
-                  <DialogHeader>
-                    <DialogTitle>Detalles del Pedido</DialogTitle>
-                    <DialogDescription>
-                      ID del Pedido: {viewingOrder.id}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold">Información del Cliente</h3>
-                      <p>
-                        <strong>Nombre:</strong> {viewingOrder.customerName}
-                      </p>
-                      <p>
-                        <strong>Email:</strong> {viewingOrder.customerEmail}
-                      </p>
-                      <p>
-                        <strong>Teléfono:</strong> {viewingOrder.customerPhone}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Dirección de Envío</h3>
-                      {viewingOrder.shippingAddress ? (
-                        <>
-                          <p>
-                            {viewingOrder.shippingAddress.address
-                              ? viewingOrder.shippingAddress.address
-                              : "No especificada"}
-                          </p>
-                          <p>
-                            {viewingOrder.shippingAddress.city},{" "}
-                            {viewingOrder.shippingAddress.state}{" "}
-                            {viewingOrder.shippingAddress.postal_code}
-                          </p>
-                          <p>{viewingOrder.shippingAddress.country}</p>
-                        </>
-                      ) : (
-                        <p>No hay dirección de envío disponible.</p>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Artículos del Pedido</h3>
-                      {viewingOrder.items && viewingOrder.items.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[80px]">Imagen</TableHead>
-                              <TableHead>Producto</TableHead>
-                              <TableHead className="text-center">Cantidad</TableHead>
-                              <TableHead className="text-right">Precio Original</TableHead>
-                              <TableHead className="text-right">Precio Final</TableHead>
-                              <TableHead className="text-right">Total Artículo</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {viewingOrder.items.map((item: any, index: number) => {
-                              const discountText = item.discountValue
-                                ? item.discountType === 'percentage'
-                                  ? `${item.discountValue}%`
-                                  : `${item.discountValue.toFixed(2)}`
-                                : 'N/A';
-                              const totalItemPrice = (item.finalPrice || 0) * (item.quantity || 0);
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-white to-gray-50/80 backdrop-blur-sm border-0 shadow-2xl">
+                  {/* Header con gradiente y elementos decorativos */}
+                  <div className="relative overflow-hidden -mx-6 -mt-6 px-6 pt-6 pb-8 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 border-b border-gray-100">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-600/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-400/10 to-blue-600/10 rounded-full transform -translate-x-12 translate-y-12"></div>
 
-                              return (
-                                <TableRow key={`${item.id}-${index}`}>
-                                  <TableCell>
-                                    <img
-                                      src={item.image || '/placeholder.jpg'}
-                                      alt={item.name}
-                                      className="w-16 h-16 object-cover rounded-md"
-                                      onError={(e) => (e.currentTarget.src = '/placeholder.jpg')}
-                                    />
-                                  </TableCell>
-                                  <TableCell className="font-medium">
-                                    <div>{item.name}</div>
-                                    {item.discountValue && (
-                                      <div className="text-xs text-muted-foreground">
-                                        Descuento: {discountText}
+                    <DialogHeader className="relative">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <ShoppingBag className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                              Pedido #{viewingOrder.id.slice(-8).toUpperCase()}
+                            </DialogTitle>
+                            <div className="flex items-center space-x-3 mt-1">
+                              <div className="relative">
+                                <Badge
+                                  className={`${getStatusColor(
+                                    viewingOrder.status
+                                  )} shadow-sm transition-colors duration-200`}
+                                >
+                                  {viewingOrder.status}
+                                </Badge>
+                                {loadingOrderUpdate && (
+                                  <div className="absolute -right-2 -top-2">
+                                    <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                                      <Loader2 className="h-2 w-2 animate-spin text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <span className="flex items-center text-sm text-gray-500">
+                                <Calendar className="w-4 h-4 mr-1" />
+                                {new Date(
+                                  viewingOrder.createdAt
+                                ).toLocaleDateString("es-ES", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500 mb-1">
+                            Total del Pedido
+                          </p>
+                          <p className="text-3xl font-bold text-blue-600 shadow-sm">
+                            ${(viewingOrder.totalAmount || 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </DialogHeader>
+                  </div>
+
+                  {/* Contenido con scroll */}
+                  <div className="overflow-y-auto max-h-[60vh] -mx-6 px-6">
+                    <div className="grid lg:grid-cols-4 gap-6 py-6">
+                      {/* Columna principal más amplia */}
+                      <div className="lg:col-span-3 space-y-6">
+                        {/* Información del cliente y envío */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                          {/* Información del Cliente */}
+                          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                              <CardTitle className="flex items-center text-lg">
+                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                  <User className="w-4 h-4 text-blue-600" />
+                                </div>
+                                Información del Cliente
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3 text-gray-700">
+                                <div className="flex items-center">
+                                  <User className="w-4 h-4 mr-2 text-gray-400" />
+                                  <span className="font-medium">
+                                    {viewingOrder.customerName}
+                                  </span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                                  <span>{viewingOrder.customerEmail}</span>
+                                </div>
+                                {viewingOrder.customerPhone && (
+                                  <div className="flex items-center">
+                                    <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                                    <span>{viewingOrder.customerPhone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Dirección de Envío */}
+                          {viewingOrder.shippingAddress ? (
+                            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                              <CardHeader className="pb-4">
+                                <CardTitle className="flex items-center text-lg">
+                                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <Truck className="w-4 h-4 text-green-600" />
+                                  </div>
+                                  Dirección de Envío
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-2 text-gray-700">
+                                  <div className="flex items-start">
+                                    <MapPin className="w-4 h-4 mr-2 text-gray-400 mt-0.5" />
+                                    <div>
+                                      <p>
+                                        {viewingOrder.shippingAddress.address ||
+                                          "No especificada"}
+                                      </p>
+                                      <p>
+                                        {viewingOrder.shippingAddress.city},{" "}
+                                        {viewingOrder.shippingAddress.state}{" "}
+                                        {viewingOrder.shippingAddress
+                                          .postal_code ||
+                                          viewingOrder.shippingAddress.zipCode}
+                                      </p>
+                                      <p>
+                                        {viewingOrder.shippingAddress.country}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ) : (
+                            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                              <CardHeader className="pb-4">
+                                <CardTitle className="flex items-center text-lg">
+                                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mr-3">
+                                    <Shield className="w-4 h-4 text-amber-600" />
+                                  </div>
+                                  Sin Envío
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+                                  <div className="flex items-center">
+                                    <Shield className="w-5 h-5 text-amber-600 mr-2" />
+                                    <p className="font-medium text-amber-900">
+                                      Pedido sin envío
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-amber-700 mt-1 ml-7">
+                                    Este pedido será entregado en persona o
+                                    retirado en tienda
+                                  </p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </div>
+
+                        {/* Productos del Pedido */}
+                        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center text-lg">
+                              <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center mr-3">
+                                <Package className="w-4 h-4 text-rose-600" />
+                              </div>
+                              Artículos del Pedido (
+                              {viewingOrder.items?.length || 0}{" "}
+                              {(viewingOrder.items?.length || 0) === 1
+                                ? "artículo"
+                                : "artículos"}
+                              )
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {viewingOrder.items &&
+                            viewingOrder.items.length > 0 ? (
+                              <div className="space-y-4">
+                                {viewingOrder.items.map(
+                                  (item: any, index: number) => {
+                                    const discountText = item.discountValue
+                                      ? item.discountType === "percentage"
+                                        ? `${item.discountValue}%`
+                                        : `$${item.discountValue.toFixed(2)}`
+                                      : null;
+                                    const totalItemPrice =
+                                      (item.finalPrice || 0) *
+                                      (item.quantity || 0);
+
+                                    return (
+                                      <div
+                                        key={`${item.id}-${index}`}
+                                        className="flex items-center space-x-4 p-4 bg-gradient-to-r from-gray-50 to-gray-50/50 rounded-xl border border-gray-100 hover:shadow-md transition-shadow"
+                                      >
+                                        <div className="w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
+                                          <img
+                                            src={
+                                              item.image || "/placeholder.jpg"
+                                            }
+                                            alt={item.name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) =>
+                                              (e.currentTarget.src =
+                                                "/placeholder.jpg")
+                                            }
+                                          />
+                                        </div>
+                                        <div className="flex-1">
+                                          <h4 className="font-semibold text-gray-900">
+                                            {item.name}
+                                          </h4>
+                                          <div className="flex items-center space-x-4 mt-2">
+                                            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-sm">
+                                              <Hash className="w-3 h-3 mr-1" />
+                                              {item.quantity}
+                                            </span>
+                                            <span className="text-sm text-gray-600">
+                                              $
+                                              {(item.finalPrice || 0).toFixed(
+                                                2
+                                              )}{" "}
+                                              c/u
+                                            </span>
+                                          </div>
+                                          {item.discountValue && (
+                                            <div className="flex items-center space-x-2 mt-1">
+                                              <span className="text-xs text-gray-500 line-through">
+                                                $
+                                                {(
+                                                  item.originalPrice || 0
+                                                ).toFixed(2)}
+                                              </span>
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-xs bg-green-100 text-green-700 hover:bg-green-200"
+                                              >
+                                                <Star className="w-3 h-3 mr-1" />
+                                                {discountText}
+                                              </Badge>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="font-bold text-lg text-blue-600">
+                                            ${totalItemPrice.toFixed(2)}
+                                          </p>
+                                          {item.discountValue && (
+                                            <p className="text-xs text-green-600 font-medium">
+                                              Ahorro
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-center">{item.quantity}</TableCell>
-                                  <TableCell className="text-right">
-                                    ${(item.originalPrice || 0).toFixed(2)}
-                                  </TableCell>
-                                  <TableCell className="text-right font-semibold">
-                                    ${(item.finalPrice || 0).toFixed(2)}
-                                  </TableCell>
-                                  <TableCell className="text-right font-bold">
-                                    ${totalItemPrice.toFixed(2)}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <p>No hay artículos en este pedido.</p>
-                      )}
-                    </div>
-                    <div className="text-right mt-4">
-                      <p className="font-bold text-xl">
-                        Total del Pedido: $
-                        {(viewingOrder.totalAmount || 0).toFixed(2)}
-                      </p>
+                                    );
+                                  }
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-gray-500">
+                                <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                                <p>No hay artículos en este pedido</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Sidebar con controles administrativos */}
+                      <div className="space-y-6">
+                        {/* Estado del Pedido - Admin Controls */}
+                        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm sticky top-4">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center text-lg">
+                              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                <Clock className="w-4 h-4 text-purple-600" />
+                              </div>
+                              Gestión de Estado
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Estado Actual
+                              </Label>
+                              <div className="relative">
+                                <Select
+                                  value={viewingOrder.status}
+                                  disabled={loadingOrderUpdate}
+                                  onValueChange={(value) =>
+                                    handleStatusChange(
+                                      viewingOrder.id,
+                                      value as OrderStatus
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger
+                                    className={`w-full ${
+                                      loadingOrderUpdate ? "opacity-50" : ""
+                                    }`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pendiente">
+                                      Pendiente
+                                    </SelectItem>
+                                    <SelectItem value="aceptado">
+                                      Aceptado
+                                    </SelectItem>
+                                    <SelectItem value="en_proceso">
+                                      En Proceso
+                                    </SelectItem>
+                                    <SelectItem value="enviado">
+                                      Enviado
+                                    </SelectItem>
+                                    <SelectItem value="entregado">
+                                      Entregado
+                                    </SelectItem>
+                                    <SelectItem value="cancelado">
+                                      Cancelado
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {loadingOrderUpdate && (
+                                  <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <Separator />
+
+                            <div className="space-y-3">
+                              <p className="text-sm font-medium text-gray-700">
+                                Acciones Rápidas
+                              </p>
+                              <div className="grid grid-cols-1 gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="justify-start text-xs"
+                                  disabled={loadingOrderUpdate}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(
+                                      viewingOrder.id
+                                    );
+                                    toast({
+                                      title: "ID copiado",
+                                      description:
+                                        "ID del pedido copiado al portapapeles",
+                                    });
+                                  }}
+                                >
+                                  📋 Copiar ID
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="justify-start text-xs text-red-600 hover:text-red-700"
+                                  disabled={loadingOrderUpdate}
+                                  onClick={() => {
+                                    if (
+                                      window.confirm(
+                                        "¿Estás seguro de que quieres eliminar este pedido?"
+                                      )
+                                    ) {
+                                      deleteOrder(viewingOrder.id);
+                                      setViewingOrder(null);
+                                    }
+                                  }}
+                                >
+                                  🗑️ Eliminar
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Resumen de Pago */}
+                        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center text-lg">
+                              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                <CreditCard className="w-4 h-4 text-green-600" />
+                              </div>
+                              Resumen de Pago
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-3">
+                              <div className="flex justify-between text-gray-600">
+                                <span>Subtotal:</span>
+                                <span>
+                                  $
+                                  {(
+                                    (viewingOrder.totalAmount || 0) -
+                                    (viewingOrder.shippingCost || 0)
+                                  ).toFixed(2)}
+                                </span>
+                              </div>
+                              {viewingOrder.shippingCost > 0 && (
+                                <div className="flex justify-between text-gray-600">
+                                  <span>Envío:</span>
+                                  <span>
+                                    ${viewingOrder.shippingCost.toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            <Separator />
+
+                            <div className="flex justify-between items-center text-xl font-bold">
+                              <span>Total:</span>
+                              <span className="text-blue-600 text-2xl">
+                                ${(viewingOrder.totalAmount || 0).toFixed(2)}
+                              </span>
+                            </div>
+
+                            <div className="pt-4 border-t">
+                              <div className="flex items-center justify-center text-sm text-gray-500">
+                                <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                                Pago procesado
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Timeline del pedido */}
+                        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center text-lg">
+                              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                                <Sparkles className="w-4 h-4 text-indigo-600" />
+                              </div>
+                              Progreso del Pedido
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              <div className="flex items-center">
+                                <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">
+                                  ✓
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900 text-sm">
+                                    Pedido recibido
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Confirmado
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div
+                                className={`flex items-center transition-colors duration-300 ${
+                                  [
+                                    "aceptado",
+                                    "en_proceso",
+                                    "enviado",
+                                    "entregado",
+                                  ].includes(viewingOrder.status)
+                                    ? "text-gray-900"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                <div
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 transition-all duration-300 ${
+                                    [
+                                      "aceptado",
+                                      "en_proceso",
+                                      "enviado",
+                                      "entregado",
+                                    ].includes(viewingOrder.status)
+                                      ? "bg-green-500 text-white scale-110"
+                                      : "bg-gray-200 text-gray-500 scale-100"
+                                  }`}
+                                >
+                                  {[
+                                    "aceptado",
+                                    "en_proceso",
+                                    "enviado",
+                                    "entregado",
+                                  ].includes(viewingOrder.status)
+                                    ? "✓"
+                                    : "2"}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    En preparación
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Procesando
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div
+                                className={`flex items-center transition-colors duration-300 ${
+                                  ["enviado", "entregado"].includes(
+                                    viewingOrder.status
+                                  )
+                                    ? "text-gray-900"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                <div
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 transition-all duration-300 ${
+                                    ["enviado", "entregado"].includes(
+                                      viewingOrder.status
+                                    )
+                                      ? "bg-green-500 text-white scale-110"
+                                      : "bg-gray-200 text-gray-500 scale-100"
+                                  }`}
+                                >
+                                  {["enviado", "entregado"].includes(
+                                    viewingOrder.status
+                                  )
+                                    ? "✓"
+                                    : "3"}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    {viewingOrder.shippingAddress
+                                      ? "Enviado"
+                                      : "Listo"}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {viewingOrder.shippingAddress
+                                      ? "En camino"
+                                      : "Para recoger"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div
+                                className={`flex items-center transition-colors duration-300 ${
+                                  viewingOrder.status === "entregado"
+                                    ? "text-gray-900"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                <div
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 transition-all duration-300 ${
+                                    viewingOrder.status === "entregado"
+                                      ? "bg-green-500 text-white scale-110"
+                                      : "bg-gray-200 text-gray-500 scale-100"
+                                  }`}
+                                >
+                                  {viewingOrder.status === "entregado"
+                                    ? "✓"
+                                    : "4"}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    Entregado
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Completado
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
                     </div>
                   </div>
                 </DialogContent>
@@ -3658,23 +4173,28 @@ export default function AdminDashboard() {
                       {loadingShipping && (
                         <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                       )}
-                      <Switch 
-                        id="shipping" 
+                      <Switch
+                        id="shipping"
                         checked={appSettings.shippingEnabled}
                         disabled={loadingShipping || loadingAppSettings}
                         onCheckedChange={async (checked) => {
                           setLoadingShipping(true);
                           try {
-                            const success = await updateAppSettings({ shippingEnabled: checked });
+                            const success = await updateAppSettings({
+                              shippingEnabled: checked,
+                            });
                             if (success) {
                               toast({
                                 title: "Configuración actualizada",
-                                description: `Envíos ${checked ? 'habilitados' : 'deshabilitados'} exitosamente.`,
+                                description: `Envíos ${
+                                  checked ? "habilitados" : "deshabilitados"
+                                } exitosamente.`,
                               });
                             } else {
                               toast({
                                 title: "Error",
-                                description: "No se pudo actualizar la configuración de envíos.",
+                                description:
+                                  "No se pudo actualizar la configuración de envíos.",
                                 variant: "destructive",
                               });
                             }
@@ -3694,7 +4214,7 @@ export default function AdminDashboard() {
                       placeholder="Los envíos están temporalmente suspendidos..."
                       rows={2}
                       className="text-sm"
-                      value={appSettings.shippingMessage || ''}
+                      value={appSettings.shippingMessage || ""}
                       onChange={(e) => {
                         updateAppSettings({ shippingMessage: e.target.value });
                       }}
@@ -3720,23 +4240,28 @@ export default function AdminDashboard() {
                       {loadingPayment && (
                         <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                       )}
-                      <Switch 
-                        id="payment" 
+                      <Switch
+                        id="payment"
                         checked={appSettings.paymentEnabled}
                         disabled={loadingPayment || loadingAppSettings}
                         onCheckedChange={async (checked) => {
                           setLoadingPayment(true);
                           try {
-                            const success = await updateAppSettings({ paymentEnabled: checked });
+                            const success = await updateAppSettings({
+                              paymentEnabled: checked,
+                            });
                             if (success) {
                               toast({
                                 title: "Configuración actualizada",
-                                description: `Pagos en línea ${checked ? 'habilitados' : 'deshabilitados'} exitosamente.`,
+                                description: `Pagos en línea ${
+                                  checked ? "habilitados" : "deshabilitados"
+                                } exitosamente.`,
                               });
                             } else {
                               toast({
                                 title: "Error",
-                                description: "No se pudo actualizar la configuración de pagos.",
+                                description:
+                                  "No se pudo actualizar la configuración de pagos.",
                                 variant: "destructive",
                               });
                             }
@@ -3756,7 +4281,7 @@ export default function AdminDashboard() {
                       placeholder="Los pagos en línea están temporalmente deshabilitados..."
                       rows={2}
                       className="text-sm"
-                      value={appSettings.paymentMessage || ''}
+                      value={appSettings.paymentMessage || ""}
                       onChange={(e) => {
                         updateAppSettings({ paymentMessage: e.target.value });
                       }}
@@ -3784,23 +4309,28 @@ export default function AdminDashboard() {
                       {loadingTax && (
                         <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                       )}
-                      <Switch 
-                        id="tax" 
+                      <Switch
+                        id="tax"
                         checked={appSettings.taxEnabled}
                         disabled={loadingTax || loadingAppSettings}
                         onCheckedChange={async (checked) => {
                           setLoadingTax(true);
                           try {
-                            const success = await updateAppSettings({ taxEnabled: checked });
+                            const success = await updateAppSettings({
+                              taxEnabled: checked,
+                            });
                             if (success) {
                               toast({
                                 title: "Configuración actualizada",
-                                description: `Impuestos ${checked ? 'habilitados' : 'deshabilitados'} exitosamente.`,
+                                description: `Impuestos ${
+                                  checked ? "habilitados" : "deshabilitados"
+                                } exitosamente.`,
                               });
                             } else {
                               toast({
                                 title: "Error",
-                                description: "No se pudo actualizar la configuración de impuestos.",
+                                description:
+                                  "No se pudo actualizar la configuración de impuestos.",
                                 variant: "destructive",
                               });
                             }
@@ -3820,7 +4350,7 @@ export default function AdminDashboard() {
                         id="tax-name"
                         placeholder="IVA"
                         className="text-sm"
-                        value={appSettings.taxName || ''}
+                        value={appSettings.taxName || ""}
                         onChange={(e) => {
                           updateAppSettings({ taxName: e.target.value });
                         }}
