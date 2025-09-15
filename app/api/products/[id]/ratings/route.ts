@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { ratings, products } from "@/lib/schema";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getUserIdFromRequest } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -30,14 +30,13 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth();
+  const userId = await getUserIdFromRequest(request);
 
-  if (!session?.user) {
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const productId = params.id;
-  const userId = session.user.id;
 
   try {
     const { rating, comment } = await request.json();
