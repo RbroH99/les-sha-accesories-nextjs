@@ -71,7 +71,7 @@ async function handleConfirmOrder(
 ) {
   try {
     // Actualizar estado de la orden en la base de datos
-    await updateOrderStatus(orderId, "confirmed");
+    await updateOrderStatus(orderId, "aceptado");
 
     // Editar mensaje original para mostrar confirmación
     await editTelegramMessage(
@@ -290,7 +290,7 @@ async function handleCancelOrder(
 ) {
   try {
     // Actualizar estado de la orden
-    await updateOrderStatus(orderId, "cancelled");
+    await updateOrderStatus(orderId, "cancelado");
 
     await editTelegramMessage(
       chatId,

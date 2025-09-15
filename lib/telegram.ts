@@ -79,7 +79,7 @@ Soy de *Les Sha Accesorios* y me pongo en contacto contigo respecto a tu pedido 
 🛍️ *Productos ordenados:*
 ${productsList}
 
-¿Hay algo en lo que pueda ayudarte con tu pedido? ¿Tienes alguna pregunta sobre los productos o el envío?
+¿Hay algo en lo que pueda ayudarte con tu pedido? ¿Tienes alguna pregunta sobre los productos?
 
 ¡Gracias por confiar en Les Sha Accesorios! ✨
 
