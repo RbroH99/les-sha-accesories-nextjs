@@ -302,3 +302,8 @@ export class OrdersRepository {
 }
 
 export const ordersRepository = new OrdersRepository();
+
+// Export individual functions for easier importing
+export const getOrderById = (id: string) => ordersRepository.getById(id);
+export const updateOrderStatus = (orderId: string, status: OrderData["status"]) => 
+  ordersRepository.updateOrderStatus(orderId, status);
