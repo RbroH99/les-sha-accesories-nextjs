@@ -72,15 +72,12 @@ function generateCustomerMessage(order: Order): string {
 Soy de *Les Sha Accesorios* y me pongo en contacto contigo respecto a tu pedido reciente.
 
 📦 *Detalles de tu orden:*
-• Número: #${order.id}
+• Número: ${order.id.slice(-8).toUpperCase()}
 • Fecha: ${new Date(order.createdAt).toLocaleDateString()}
 • Total: $${order.totalAmount}
 
 🛍️ *Productos ordenados:*
 ${productsList}
-
-📍 *Dirección de envío:*
-${shippingAddress}
 
 ¿Hay algo en lo que pueda ayudarte con tu pedido? ¿Tienes alguna pregunta sobre los productos o el envío?
 
@@ -154,9 +151,8 @@ function formatProfessionalMessage(order: Order): string {
   return `
     📦 *¡Nueva Orden Recibida!* 📦
 
-*ID DE ORDEN:* #${order.id}
-*FECHA:* ${timestamp}
-*ESTADO:* PENDIENTE DE PROCESAMIENTO
+*ID DE ORDEN:*
+#${order.id.slice(-8).toUpperCase()}
 
 *─── INFORMACIÓN DEL CLIENTE ───*
 
