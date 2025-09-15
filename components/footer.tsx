@@ -17,11 +17,9 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-amber-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">B</span>
+                <span className="text-white font-bold text-sm">LS</span>
               </div>
-              <span className="font-bold text-xl font-playfair">
-                Bisutería Artesanal
-              </span>
+              <span className="font-bold text-xl font-playfair">Les Sha</span>
             </div>
             <p className="text-gray-400 text-sm">
               Creando joyas únicas con amor y dedicación. Cada pieza cuenta una
